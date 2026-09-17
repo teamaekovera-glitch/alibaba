@@ -1,7 +1,10 @@
 import { Counter } from "./counter";
+import { fnv1a } from "../fnv";
 import type {
   Charge,
   ChargeRequest,
+  ConnectedAccount,
+  ConnectedAccountRequest,
   PaymentsAdapter,
   Refund,
   Transfer,
@@ -17,6 +20,22 @@ export class MockPaymentsAdapter implements PaymentsAdapter {
   readonly #transfers = new Map<string, Transfer>();
   readonly #refunds = new Map<string, Refund>();
   readonly #counter = new Counter();
+
+  async createConnectedAccount(request: ConnectedAccountRequest): Promise<ConnectedAccount> {
+    const businessName = request.businessName.trim();
+    if (!businessName) {
+      throw new Error("businessName is required to create a connected account");
+    }
+    // Deterministic and idempotent: same business + country → same account id,
+    // mirroring Stripe's account reuse when a profile re-links.
+    const account: ConnectedAccount = {
+      id: `acct_mock_${fnv1a(`${businessName.toLowerCase()}:${request.country.toLowerCase()}`).toString(16).padStart(8, "0")}`,
+      businessName,
+      country: request.country,
+      chargesEnabled: true,
+    };
+    return account;
+  }
 
   async captureCharge(request: ChargeRequest): Promise<Charge> {
     if (request.amountCents <= 0) {

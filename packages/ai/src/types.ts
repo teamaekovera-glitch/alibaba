@@ -131,7 +131,26 @@ export interface Refund {
   amountCents: number;
 }
 
+export interface ConnectedAccountRequest {
+  /** Supplier's legal business name — becomes the mock account label. */
+  businessName: string;
+  country: string;
+}
+
+export interface ConnectedAccount {
+  /** Platform-side identifier to persist on the supplier profile. */
+  id: string;
+  businessName: string;
+  country: string;
+  /** Mock always returns true; a real Stripe adapter reports onboarding state. */
+  chargesEnabled: boolean;
+}
+
 export interface PaymentsAdapter {
+  /** Creates (or idempotently returns) the supplier's Connect account.
+   * Same businessName + country → same account id, so re-running the
+   * onboarding step cannot mint duplicate accounts. */
+  createConnectedAccount(request: ConnectedAccountRequest): Promise<ConnectedAccount>;
   captureCharge(request: ChargeRequest): Promise<Charge>;
   transferToConnectedAccount(request: TransferRequest): Promise<Transfer>;
   refundCharge(chargeId: string, amountCents?: number): Promise<Refund>;

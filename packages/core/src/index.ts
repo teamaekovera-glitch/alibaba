@@ -17,3 +17,5 @@ export function packageInfo(): PackageInfo {
 }
 
 export * from "./permissions";
+export * from "./onboarding";
+export * from "./repositories";
