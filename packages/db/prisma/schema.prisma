@@ -1,0 +1,12 @@
+// PackSource database (Postgres 16 + pgvector via docker-compose; Neon in prod).
+// The Phase 0 domain model (organizations, listings, RFQs, orders, escrow
+// ledger) lands in the schema workstream — this stub pins the generator and
+// datasource so tooling is wired from day one.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
