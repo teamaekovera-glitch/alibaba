@@ -1,0 +1,25 @@
+{
+  "name": "@packsource/search",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "prisma generate --schema=../db/prisma/schema.prisma && tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "prisma generate --schema=../db/prisma/schema.prisma && vitest run --config vitest.integration.config.ts",
+    "backfill:embeddings": "tsx src/cli/backfill-embeddings.ts"
+  },
+  "dependencies": {
+    "@packsource/ai": "workspace:*",
+    "@packsource/db": "workspace:*",
+    "meilisearch": "^0.51.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "prisma": "^6.19.3",
+    "tsx": "^4.23.13",
+    "typescript": "^5.6.3",
+    "vitest": "^3.0.0"
+  }
+}
