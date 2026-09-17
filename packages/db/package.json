@@ -5,9 +5,10 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "postinstall": "prisma generate",
+    "typecheck": "prisma generate && tsc --noEmit",
+    "test": "prisma generate && vitest run",
+    "test:integration": "prisma generate && vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3"

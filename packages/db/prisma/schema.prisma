@@ -1,7 +1,20 @@
-// PackSource database (Postgres 16 + pgvector via docker-compose; Neon in prod).
-// The Phase 0 domain model (organizations, listings, RFQs, orders, escrow
-// ledger) lands in the schema workstream — this stub pins the generator and
-// datasource so tooling is wired from day one.
+// PackSource domain schema — Postgres 16 + pgvector (pgvector/pgvector:pg16 in
+// dev/CI, Neon in prod). Source of truth: the PackSource v1.0 spec (Domain
+// Model, Taxonomy, Locked Decisions).
+//
+// Conventions:
+//   - Every domain table carries orgId for tenant isolation; queries go through
+//     permission-gated repository functions that filter by org. The two
+//     platform-global exceptions (Category taxonomy, k-anonymized
+//     PriceBenchmark aggregates) are documented on the models.
+//   - Money is integer cents everywhere (`*Cents`); rates are integer basis
+//     points (`*Bps`).
+//   - Enum-typed state per the spec; append-only tables (AuditLog,
+//     EscrowLedgerEntry) have no updatedAt.
+//   - ListingEmbedding.embedding is a pgvector column (1536 dims, HNSW cosine
+//     index). Prisma cannot express either natively — the init migration
+//     creates the extension and the HNSW index; access is via $queryRaw.
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,4 +22,1647 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum OrgType {
+  BUYER
+  SUPPLIER
+  PLATFORM
+}
+
+// Per-org membership roles (spec: Multi-tenancy and roles).
+enum OrgRole {
+  OWNER
+  ADMIN
+  BUYER
+  APPROVER
+  SUPPLIER_SALES
+  SUPPLIER_OPS
+  AEKOVERA_STAFF
+}
+
+// UNVERIFIED (importer default) → VERIFIED (documents) → AEKOVERA_VETTED
+// (site/reference check). Boosts search rank (spec: Locked decisions).
+enum VerificationStatus {
+  UNVERIFIED
+  VERIFIED
+  AEKOVERA_VETTED
+}
+
+// Supplier-facing payment terms (default NET_30 per the representative schema).
+enum PaymentTerms {
+  FULL_PREPAY
+  DEPOSIT_50_50
+  NET_15
+  NET_30
+  NET_45
+  NET_60
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  LIVE
+  PAUSED
+  REJECTED
+}
+
+// Stock / capacity indicators.
+enum StockLevel {
+  OUT_OF_STOCK
+  LOW
+  IN_STOCK
+  MADE_TO_ORDER
+}
+
+// Spec-sheet PDF extraction is never auto-published without confirmation.
+enum SpecExtractionStatus {
+  UPLOADED
+  EXTRACTED
+  CONFIRMED
+  FAILED
+}
+
+// Structured compliance claim frameworks (spec: Taxonomy and compliance).
+enum ComplianceFramework {
+  FDA_21CFR
+  EU_10_2011
+  PROP65
+  BPA_FREE
+  FSC
+  RECYCLABLE
+  COMPOSTABLE
+  KOSHER
+  HALAL
+}
+
+enum FeaturedPlacementKind {
+  LISTING_BOOST
+  CATEGORY_SPONSORSHIP
+}
+
+enum FeaturedPlacementStatus {
+  SCHEDULED
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum RfqMode {
+  SINGLE
+  BROADCAST
+  AUCTION
+}
+
+enum RfqStatus {
+  DRAFT
+  OPEN
+  AWARDED
+  CLOSED
+  CANCELLED
+}
+
+// SUPERSEDED marks revisions replaced by a counter-offer revision; every
+// revision stays attributable through QuoteRevisions.
+enum QuoteStatus {
+  DRAFT
+  SUBMITTED
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  WITHDRAWN
+  SUPERSEDED
+}
+
+enum NegotiationMessageKind {
+  MESSAGE
+  COUNTER_OFFER
+  SYSTEM
+}
+
+enum SampleOrderStatus {
+  REQUESTED
+  APPROVED
+  DECLINED
+  SHIPPED
+  DELIVERED
+  CONVERTED
+  CANCELLED
+}
+
+// Order / escrow lifecycle exactly per the spec state machine.
+enum OrderStatus {
+  DRAFT
+  DEPOSIT_DUE
+  DEPOSIT_PAID
+  IN_PRODUCTION
+  READY_TO_SHIP
+  BALANCE_DUE
+  SHIPPED
+  DELIVERED
+  ESCROW_RELEASED
+  CLOSED
+  CANCELLED
+  DISPUTED
+  PARTIALLY_REFUNDED
+}
+
+// Fulfillment state owned by supplier ops (spec: Multi-tenancy and roles).
+enum SubOrderStatus {
+  PENDING
+  CONFIRMED
+  IN_PRODUCTION
+  READY_TO_SHIP
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+// FULL_PREPAY | DEPOSIT_30_70 | NET_30 (Net-30 only for staff-approved buyers).
+enum PaymentSchedule {
+  FULL_PREPAY
+  DEPOSIT_30_70
+  NET_30
+}
+
+enum PaymentKind {
+  DEPOSIT
+  BALANCE
+  FULL
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+}
+
+// Every movement (hold, release, commission, refund) writes one of these.
+enum EscrowEntryKind {
+  HOLD
+  RELEASE
+  COMMISSION
+  REFUND
+  PARTIAL_REFUND
+}
+
+enum InvoiceKind {
+  PRO_FORMA
+  COMMERCIAL
+  CREDIT_NOTE
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  OVERDUE
+  VOID
+}
+
+enum ShipmentStatus {
+  CREATED
+  IN_TRANSIT
+  DELIVERED
+  EXCEPTION
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  WITHDRAWN
+}
+
+// Staff mediation may resolve to a partial refund before releasing the
+// escrow remainder (spec: Samples and disputes).
+enum DisputeOutcome {
+  FULL_REFUND
+  PARTIAL_REFUND
+  RELEASE_ESCROW
+  MIXED
+}
+
+enum ThreadKind {
+  RFQ
+  ORDER
+  SAMPLE
+  SUPPORT
+}
+
+enum MessageKind {
+  TEXT
+  QUOTE_CARD
+  FILE
+  SYSTEM
+}
+
+// Approvals are a state machine, not a flag (spec: Buyer workspace).
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum FraudFlagStatus {
+  OPEN
+  REVIEWED
+  DISMISSED
+}
+
+enum EmbeddingKind {
+  TITLE
+  ATTRIBUTES
+  SPEC_TEXT
+  VISUAL
+}
+
+enum WebhookDirection {
+  OUTBOUND
+  INBOUND
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
+  RETRYING
+}
+
+enum EquipmentKind {
+  FILLER
+  SEALER
+  CAPPER
+  DECORATOR
+  LABELER
+  OTHER
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Identity & tenancy
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Organization {
+  id           String    @id @default(cuid())
+  type         OrgType
+  name         String
+  slug         String    @unique
+  referralCode String?   @unique // Aekovera OS cross-referral attribution
+  billingEmail String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  members                OrgMembership[]
+  supplierProfile        SupplierProfile?
+  plants                 Plant[]
+  capabilities           Capability[]
+  equipment              Equipment[]
+  certifications         Certification[]
+  listings               Listing[]
+  listingVariants        ListingVariant[]
+  complianceClaims       ComplianceClaim[]
+  specSheets             SpecSheet[]
+  dielineFiles           DielineFile[]
+  artworkFiles           ArtworkFile[]
+  moqPriceTiers          MoqPriceTier[]
+  leadTimeRules          LeadTimeRule[]
+  featuredPlacements     FeaturedPlacement[]
+  rfqs                   Rfq[]
+  rfqLines               RfqLine[]
+  quotes                 Quote[]
+  quoteLines             QuoteLine[]
+  negotiationMessages    NegotiationMessage[]
+  cart                   Cart?
+  sampleKits             SampleKit[]
+  sampleOrdersAsBuyer    SampleOrder[]        @relation("SampleOrderBuyer")
+  sampleOrdersAsSupplier SampleOrder[]        @relation("SampleOrderSupplier")
+  orders                 Order[]
+  subOrders              SubOrder[]
+  orderLines             OrderLine[]
+  shipments              Shipment[]
+  invoicesAsBuyer        Invoice[]            @relation("InvoiceBuyer")
+  invoicesAsSupplier     Invoice[]            @relation("InvoiceSupplier")
+  payments               Payment[]
+  refunds                Refund[]
+  payouts                Payout[]
+  escrowEntries          EscrowLedgerEntry[]
+  disputesOpened         Dispute[]
+  threadsAsBuyer         Thread[]             @relation("ThreadBuyer")
+  threadsAsSupplier      Thread[]             @relation("ThreadSupplier")
+  messages               Message[]
+  messageAttachments     MessageAttachment[]
+  reviewsWritten         Review[]             @relation("ReviewBuyer")
+  reviewsReceived        Review[]             @relation("ReviewSupplier")
+  reviewPhotos           ReviewPhoto[]
+  fraudFlags             FraudFlag[]
+  rateLimitEvents        RateLimitEvent[]
+  savedLists             SavedList[]
+  savedListItems         SavedListItem[]
+  projectBoards          ProjectBoard[]
+  projectBoardCards      ProjectBoardCard[]
+  orderTemplates         OrderTemplate[]
+  reorderRules           ReorderRule[]
+  costCenters            CostCenter[]
+  poNumbers              PoNumber[]
+  approvalRequests       ApprovalRequest[]
+  auditLogs              AuditLog[]
+  analyticsEvents        AnalyticsEvent[]
+  embeddings             ListingEmbedding[]
+  aekoveraProjectRefs    AekoveraProjectRef[]
+  webhookDeliveries      WebhookDelivery[]
+  cartItems              CartItem[]
+  disputeEvidences       DisputeEvidence[]
+
+  @@index([type, slug])
+}
+
+// Auth.js user (next-auth v5 core fields).
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  name          String?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  memberships              OrgMembership[]
+  rfqs                     Rfq[]
+  quotes                   Quote[]
+  quotesAccepted           Quote[]           @relation("QuoteAcceptor")
+  messages                 Message[]
+  reviews                  Review[]
+  orders                   Order[]
+  net30ApprovedOrders      Order[]           @relation("OrderNet30Approver")
+  approvalsRequested       ApprovalRequest[] @relation("ApprovalRequester")
+  approvalsDecided         ApprovalRequest[] @relation("ApprovalDecider")
+  disputesOpened           Dispute[]         @relation("DisputeOpener")
+  disputesResolved         Dispute[]         @relation("DisputeResolver")
+  verifiedSupplierProfiles SupplierProfile[] @relation("SupplierVerifier")
+}
+
+model OrgMembership {
+  id        String       @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id])
+  userId    String
+  user      User         @relation(fields: [userId], references: [id])
+  role      OrgRole
+  createdAt DateTime     @default(now())
+
+  @@unique([orgId, userId])
+  @@index([userId])
+}
+
+// Append-only by policy: rows are written and read, never updated or deleted.
+model AuditLog {
+  id          String       @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  actorUserId String? // Auth.js user id — informational, survives user deletion
+  actorType   String       @default("user") // user | system | stripe_webhook | ...
+  action      String // e.g. "order.escrow_release", "supplier.verify"
+  entityType  String
+  entityId    String
+  before      Json?
+  after       Json?
+  ip          String?
+  createdAt   DateTime     @default(now())
+
+  @@index([orgId, createdAt])
+  @@index([entityType, entityId])
+}
+
+model AnalyticsEvent {
+  id          String        @id @default(cuid())
+  orgId       String?
+  org         Organization? @relation(fields: [orgId], references: [id])
+  type        String // e.g. "listing.viewed", "rfq.sent", "quote.accepted"
+  actorUserId String?
+  subjectType String?
+  subjectId   String?
+  properties  Json?
+  occurredAt  DateTime      @default(now())
+
+  @@index([orgId, occurredAt])
+  @@index([type, occurredAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Supplier profile
+// ─────────────────────────────────────────────────────────────────────────────
+
+model SupplierProfile {
+  id                     String             @id @default(cuid())
+  orgId                  String             @unique
+  org                    Organization       @relation(fields: [orgId], references: [id])
+  verificationStatus     VerificationStatus @default(UNVERIFIED)
+  responseTimeHours      Float?
+  minOrderValueCents     Int?
+  paymentTerms           PaymentTerms       @default(NET_30)
+  // Stripe Connect account link (onboarding wizard step 6).
+  stripeConnectAccountId String?            @unique
+  stripeChargesEnabled   Boolean            @default(false)
+  submittedForReviewAt   DateTime?
+  verifiedAt             DateTime?
+  verifiedByUserId       String?
+  verifiedBy             User?              @relation("SupplierVerifier", fields: [verifiedByUserId], references: [id])
+  about                  String?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  plants             Plant[]
+  capabilities       Capability[]
+  equipment          Equipment[]
+  certifications     Certification[]
+  featuredPlacements FeaturedPlacement[]
+}
+
+model Plant {
+  id                String          @id @default(cuid())
+  orgId             String
+  org               Organization    @relation(fields: [orgId], references: [id])
+  supplierProfileId String
+  supplierProfile   SupplierProfile @relation(fields: [supplierProfileId], references: [id])
+  name              String
+  addressLine1      String?
+  addressLine2      String?
+  city              String
+  state             String?
+  postalCode        String?
+  country           String
+  latitude          Float?
+  longitude         Float?
+  isPrimary         Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  leadTimeRules LeadTimeRule[]
+}
+
+model Capability {
+  id                String          @id @default(cuid())
+  orgId             String
+  org               Organization    @relation(fields: [orgId], references: [id])
+  supplierProfileId String
+  supplierProfile   SupplierProfile @relation(fields: [supplierProfileId], references: [id])
+  name              String // e.g. "offset printing", "hot-fill"
+  detail            String?
+  createdAt         DateTime        @default(now())
+
+  @@unique([supplierProfileId, name])
+}
+
+// Filler/sealer/capper types + specs power co-man compatibility checks.
+model Equipment {
+  id                String          @id @default(cuid())
+  orgId             String
+  org               Organization    @relation(fields: [orgId], references: [id])
+  supplierProfileId String
+  supplierProfile   SupplierProfile @relation(fields: [supplierProfileId], references: [id])
+  kind              EquipmentKind
+  make              String?
+  model             String?
+  specs             Json // e.g. { speedUnitsPerHour, fillVolumesMl, containerTypes }
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
+// type + number + expiresAt + evidenceFileId per the entity map; expiry drives
+// the compliance checker and verification queue.
+model Certification {
+  id                String          @id @default(cuid())
+  orgId             String
+  org               Organization    @relation(fields: [orgId], references: [id])
+  supplierProfileId String
+  supplierProfile   SupplierProfile @relation(fields: [supplierProfileId], references: [id])
+  type              String // e.g. "SQF", "BRCGS", "FDA_REGISTRATION", "ORGANIC"
+  number            String
+  issuedAt          DateTime?
+  expiresAt         DateTime
+  evidenceFileId    String? // R2 object key — mock-first storage adapter
+  verifiedAt        DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([supplierProfileId])
+  @@index([expiresAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Catalog
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Platform-global taxonomy tree (9 top-level groups per the spec). Not
+// org-scoped: categories are shared infrastructure, owned by the platform.
+// attributeSet is the per-category JSON schema consumed by the Zod validation
+// in this package (src/attribute-validation.ts).
+model Category {
+  id           String     @id @default(cuid())
+  parentId     String?
+  parent       Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children     Category[] @relation("CategoryTree")
+  name         String
+  slug         String     @unique
+  position     Int        @default(0)
+  attributeSet Json
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  listings           Listing[]
+  priceBenchmarks    PriceBenchmark[]
+  featuredPlacements FeaturedPlacement[]
+  rfqs               Rfq[]
+
+  @@index([parentId])
+}
+
+model Listing {
+  id                   String        @id @default(cuid())
+  orgId                String
+  org                  Organization  @relation(fields: [orgId], references: [id])
+  categoryId           String
+  category             Category      @relation(fields: [categoryId], references: [id])
+  title                String
+  slug                 String        @unique
+  description          String?
+  status               ListingStatus @default(DRAFT)
+  attributes           Json // validated against Category.attributeSet
+  images               Json? // [{ url, alt?, position }]
+  viewCount            Int           @default(0)
+  // Stock / capacity indicators.
+  stockLevel           StockLevel?
+  capacityUnitsPerWeek Int?
+  seedIsFictional      Boolean       @default(false) // set only by the seeder
+  publishedAt          DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  variants           ListingVariant[]
+  complianceClaims   ComplianceClaim[]
+  specSheets         SpecSheet[]
+  dielineFiles       DielineFile[]
+  artworkFiles       ArtworkFile[]
+  moqTiers           MoqPriceTier[]
+  leadTimes          LeadTimeRule[]
+  embeddings         ListingEmbedding[]
+  featuredPlacements FeaturedPlacement[]
+  sampleKits         SampleKit[]
+  rfqLines           RfqLine[]
+  orderLines         OrderLine[]
+  savedListItems     SavedListItem[]
+  projectBoardCards  ProjectBoardCard[]
+  orderTemplates     OrderTemplate[]
+  reorderRules       ReorderRule[]
+  reviews            Review[]
+  rfqs               Rfq[]
+  sampleOrders       SampleOrder[]
+
+  @@index([orgId])
+  @@index([categoryId, status])
+  @@index([status, createdAt])
+}
+
+// Structured compliance claim: framework + optional certification reference +
+// evidence file. The compliance checker flags claims missing their reference.
+model ComplianceClaim {
+  id             String              @id @default(cuid())
+  listingId      String
+  listing        Listing             @relation(fields: [listingId], references: [id])
+  orgId          String
+  org            Organization        @relation(fields: [orgId], references: [id])
+  framework      ComplianceFramework
+  claim          String
+  certRef        String?
+  evidenceFileId String?
+  createdAt      DateTime            @default(now())
+
+  @@index([listingId])
+}
+
+model ListingVariant {
+  id             String       @id @default(cuid())
+  listingId      String
+  listing        Listing      @relation(fields: [listingId], references: [id])
+  orgId          String
+  org            Organization @relation(fields: [orgId], references: [id])
+  sku            String
+  barcode        String?
+  attributes     Json?
+  unitPriceCents Int? // overrides the ladder when set
+  stockQty       Int?
+  stockLevel     StockLevel?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  orderLines     OrderLine[]
+  orderTemplates OrderTemplate[]
+  rfqLines       RfqLine[]
+
+  @@unique([listingId, sku])
+}
+
+// Spec-sheet PDF where Claude extracts attributes into draft fields — never
+// auto-published without supplier confirmation (spec: Supplier console).
+model SpecSheet {
+  id                  String               @id @default(cuid())
+  listingId           String
+  listing             Listing              @relation(fields: [listingId], references: [id])
+  orgId               String
+  org                 Organization         @relation(fields: [orgId], references: [id])
+  fileId              String // R2 object key
+  title               String
+  extractionStatus    SpecExtractionStatus @default(UPLOADED)
+  extractedAttributes Json?
+  confirmedAt         DateTime?
+  confirmedByUserId   String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+}
+
+model DielineFile {
+  id        String       @id @default(cuid())
+  listingId String
+  listing   Listing      @relation(fields: [listingId], references: [id])
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id])
+  fileId    String // R2 object key
+  label     String?
+  createdAt DateTime     @default(now())
+}
+
+model ArtworkFile {
+  id        String       @id @default(cuid())
+  listingId String
+  listing   Listing      @relation(fields: [listingId], references: [id])
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id])
+  fileId    String // R2 object key
+  label     String?
+  createdAt DateTime     @default(now())
+}
+
+// Quantity-sorted price ladder; @@unique([listingId, minQty]) per the
+// representative schema.
+model MoqPriceTier {
+  id             String       @id @default(cuid())
+  listingId      String
+  listing        Listing      @relation(fields: [listingId], references: [id])
+  orgId          String
+  org            Organization @relation(fields: [orgId], references: [id])
+  minQty         Int
+  unitPriceCents Int
+
+  @@unique([listingId, minQty])
+}
+
+model LeadTimeRule {
+  id              String       @id @default(cuid())
+  listingId       String
+  listing         Listing      @relation(fields: [listingId], references: [id])
+  orgId           String
+  org             Organization @relation(fields: [orgId], references: [id])
+  qtyMin          Int
+  qtyMax          Int?
+  productionDays  Int
+  shipFromPlantId String?
+  shipFromPlant   Plant?       @relation(fields: [shipFromPlantId], references: [id])
+
+  @@index([listingId])
+}
+
+// Paid featured listings and category sponsorship, billed annually.
+model FeaturedPlacement {
+  id                String                  @id @default(cuid())
+  orgId             String // paying supplier org
+  org               Organization            @relation(fields: [orgId], references: [id])
+  listingId         String?
+  listing           Listing?                @relation(fields: [listingId], references: [id])
+  categoryId        String?
+  category          Category?               @relation(fields: [categoryId], references: [id])
+  kind              FeaturedPlacementKind
+  annualAmountCents Int
+  startsAt          DateTime
+  endsAt            DateTime
+  status            FeaturedPlacementStatus @default(SCHEDULED)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  supplierProfile   SupplierProfile?        @relation(fields: [supplierProfileId], references: [id])
+  supplierProfileId String?
+
+  @@index([status, endsAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Trade — RFQ → quote → negotiation
+// ─────────────────────────────────────────────────────────────────────────────
+
+// SINGLE | BROADCAST | AUCTION per the entity map. Auctions enforce closesAt.
+model Rfq {
+  id                  String       @id @default(cuid())
+  orgId               String // buyer org
+  org                 Organization @relation(fields: [orgId], references: [id])
+  buyerUserId         String
+  buyerUser           User         @relation(fields: [buyerUserId], references: [id])
+  mode                RfqMode
+  listingId           String?
+  listing             Listing?     @relation(fields: [listingId], references: [id])
+  categoryId          String?
+  category            Category?    @relation(fields: [categoryId], references: [id])
+  title               String
+  description         String?
+  spec                Json? // structured spec attributes
+  quantity            Int?
+  closesAt            DateTime? // auction close time
+  status              RfqStatus    @default(DRAFT)
+  awardedQuoteId      String?      @unique
+  awardedQuote        Quote?       @relation("RfqAwardedQuote", fields: [awardedQuoteId], references: [id])
+  convertedFromSample SampleOrder? @relation("SampleOrderConversion")
+  sentAt              DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  lines               RfqLine[]
+  quotes              Quote[]
+  negotiationMessages NegotiationMessage[]
+  threads             Thread[]
+  projectBoardCards   ProjectBoardCard[]
+
+  @@index([orgId, status])
+  @@index([listingId])
+}
+
+model RfqLine {
+  id               String          @id @default(cuid())
+  rfqId            String
+  rfq              Rfq             @relation(fields: [rfqId], references: [id])
+  orgId            String
+  org              Organization    @relation(fields: [orgId], references: [id])
+  listingId        String?
+  listing          Listing?        @relation(fields: [listingId], references: [id])
+  listingVariantId String?
+  listingVariant   ListingVariant? @relation(fields: [listingVariantId], references: [id])
+  description      String
+  quantity         Int
+  unit             String? // e.g. "units", "cases"
+  targetAttributes Json?
+  createdAt        DateTime        @default(now())
+
+  quoteLines QuoteLine[]
+
+  @@index([rfqId])
+}
+
+// One revision of a supplier's offer. Counters create a new Quote with
+// revision+1 via QuoteRevisions; the old revision becomes SUPERSEDED.
+model Quote {
+  id                String       @id @default(cuid())
+  rfqId             String
+  rfq               Rfq          @relation(fields: [rfqId], references: [id])
+  orgId             String // supplier org
+  org               Organization @relation(fields: [orgId], references: [id])
+  salesUserId       String?
+  salesUser         User?        @relation(fields: [salesUserId], references: [id])
+  parentQuoteId     String?      @unique
+  parentQuote       Quote?       @relation("QuoteRevisions", fields: [parentQuoteId], references: [id])
+  supersessions     Quote[]      @relation("QuoteRevisions")
+  revision          Int          @default(1)
+  status            QuoteStatus  @default(DRAFT)
+  quantity          Int
+  unitPriceCents    Int
+  toolingCents      Int          @default(0) // one-time; amortized across quantity
+  plateChargesCents Int          @default(0) // one-time per SKU/color
+  freightCents      Int          @default(0)
+  dutyBps           Int          @default(0) // 1 bp = 0.01%; 0 for domestic
+  leadTimeDays      Int
+  validFrom         DateTime
+  validUntil        DateTime
+  acceptedAt        DateTime?
+  acceptedByUserId  String?
+  acceptedBy        User?        @relation("QuoteAcceptor", fields: [acceptedByUserId], references: [id])
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  lines               QuoteLine[]
+  negotiationMessages NegotiationMessage[]
+  cartItem            CartItem?
+  order               Order?
+  awardedForRfq       Rfq?                 @relation("RfqAwardedQuote")
+  messages            Message[]
+
+  @@index([rfqId, status])
+  @@index([orgId, status])
+}
+
+// Per-line quote components (tooling, plates, freight per the entity map).
+model QuoteLine {
+  id                String       @id @default(cuid())
+  quoteId           String
+  quote             Quote        @relation(fields: [quoteId], references: [id])
+  orgId             String
+  org               Organization @relation(fields: [orgId], references: [id])
+  rfqLineId         String?
+  rfqLine           RfqLine?     @relation(fields: [rfqLineId], references: [id])
+  description       String
+  quantity          Int
+  unitPriceCents    Int
+  toolingCents      Int          @default(0)
+  plateChargesCents Int          @default(0)
+  freightCents      Int          @default(0)
+  totalCents        Int
+  createdAt         DateTime     @default(now())
+  orderLines        OrderLine[]
+}
+
+// Structured counter-offer terms keep every revision attributable.
+model NegotiationMessage {
+  id        String                 @id @default(cuid())
+  rfqId     String
+  rfq       Rfq                    @relation(fields: [rfqId], references: [id])
+  quoteId   String?
+  quote     Quote?                 @relation(fields: [quoteId], references: [id])
+  orgId     String // sender org
+  org       Organization           @relation(fields: [orgId], references: [id])
+  userId    String?
+  kind      NegotiationMessageKind @default(MESSAGE)
+  body      String?
+  terms     Json? // e.g. { unitPriceCents, toolingCents, freightCents, leadTimeDays }
+  createdAt DateTime               @default(now())
+
+  @@index([rfqId, createdAt])
+  @@index([quoteId])
+}
+
+// The quote cart: one per buyer org; accepted quotes land here to compare
+// normalized landed cost.
+model Cart {
+  id        String       @id @default(cuid())
+  orgId     String       @unique
+  org       Organization @relation(fields: [orgId], references: [id])
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  items CartItem[]
+}
+
+model CartItem {
+  id      String       @id @default(cuid())
+  cartId  String
+  cart    Cart         @relation(fields: [cartId], references: [id])
+  orgId   String
+  org     Organization @relation(fields: [orgId], references: [id])
+  quoteId String       @unique
+  quote   Quote        @relation(fields: [quoteId], references: [id])
+  addedAt DateTime     @default(now())
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Samples
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Kit configuration per listing; free-sample rules (e.g. free under N units
+// with paid freight).
+model SampleKit {
+  id           String       @id @default(cuid())
+  listingId    String
+  listing      Listing      @relation(fields: [listingId], references: [id])
+  orgId        String // supplier org
+  org          Organization @relation(fields: [orgId], references: [id])
+  name         String
+  contents     Json // [{ item, quantity }]
+  feeCents     Int          @default(0)
+  freeUnderQty Int?
+  carrier      String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  sampleOrders SampleOrder[]
+}
+
+// Tracks independently of production orders; converts to an RFQ in one click.
+model SampleOrder {
+  id             String            @id @default(cuid())
+  orgId          String // buyer org
+  org            Organization      @relation("SampleOrderBuyer", fields: [orgId], references: [id])
+  supplierOrgId  String
+  supplierOrg    Organization      @relation("SampleOrderSupplier", fields: [supplierOrgId], references: [id])
+  buyerUserId    String?
+  sampleKitId    String?
+  sampleKit      SampleKit?        @relation(fields: [sampleKitId], references: [id])
+  listingId      String
+  listing        Listing           @relation(fields: [listingId], references: [id])
+  quantity       Int               @default(1)
+  feeCents       Int               @default(0)
+  freightCents   Int               @default(0)
+  status         SampleOrderStatus @default(REQUESTED)
+  carrier        String?
+  trackingNumber String?
+  shippedAt      DateTime?
+  deliveredAt    DateTime?
+  convertedRfqId String?           @unique
+  convertedRfq   Rfq?              @relation("SampleOrderConversion", fields: [convertedRfqId], references: [id])
+  notes          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  threads Thread[]
+
+  @@index([orgId, status])
+  @@index([supplierOrgId, status])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Orders & money
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Escrow state machine per the spec; transitions live in packages/core, and
+// every money movement writes an EscrowLedgerEntry.
+model Order {
+  id                    String              @id @default(cuid())
+  orgId                 String // buyer org
+  org                   Organization        @relation(fields: [orgId], references: [id])
+  buyerUserId           String
+  buyerUser             User                @relation(fields: [buyerUserId], references: [id])
+  quoteId               String?             @unique
+  quote                 Quote?              @relation(fields: [quoteId], references: [id])
+  status                OrderStatus         @default(DRAFT)
+  paymentSchedule       PaymentSchedule
+  subtotalCents         Int                 @default(0)
+  toolingCents          Int                 @default(0)
+  plateChargesCents     Int                 @default(0)
+  freightCents          Int                 @default(0)
+  dutyCents             Int                 @default(0)
+  taxCents              Int                 @default(0)
+  totalCents            Int                 @default(0)
+  commissionBps         Int                 @default(500) // platform commission, 5% default
+  poNumberId            String?
+  poNumber              PoNumber?           @relation(fields: [poNumberId], references: [id])
+  costCenterId          String?
+  costCenter            CostCenter?         @relation(fields: [costCenterId], references: [id])
+  aekoveraProjectRefId  String?
+  aekoveraProjectRef    AekoveraProjectRef? @relation(fields: [aekoveraProjectRefId], references: [id])
+  net30ApprovedByUserId String?
+  net30ApprovedBy       User?               @relation("OrderNet30Approver", fields: [net30ApprovedByUserId], references: [id])
+  net30ApprovedAt       DateTime?
+  placedAt              DateTime?
+  closedAt              DateTime?
+  cancelledAt           DateTime?
+  cancellationReason    String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  subOrders         SubOrder[]
+  orderLines        OrderLine[]
+  invoices          Invoice[]
+  payments          Payment[]
+  refunds           Refund[]
+  payouts           Payout[]
+  escrowEntries     EscrowLedgerEntry[]
+  disputes          Dispute[]
+  reviews           Review[]
+  threads           Thread[]
+  projectBoardCards ProjectBoardCard[]
+
+  @@index([orgId, status])
+  @@index([status, placedAt])
+}
+
+// Per-supplier slice of an order (spec: SubOrder (per supplier)).
+model SubOrder {
+  id                String         @id @default(cuid())
+  orderId           String
+  order             Order          @relation(fields: [orderId], references: [id])
+  orgId             String // supplier org
+  org               Organization   @relation(fields: [orgId], references: [id])
+  status            SubOrderStatus @default(PENDING)
+  subtotalCents     Int            @default(0)
+  toolingCents      Int            @default(0)
+  plateChargesCents Int            @default(0)
+  freightCents      Int            @default(0)
+  totalCents        Int            @default(0)
+  commissionBps     Int            @default(500)
+  productionNotes   String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  orderLines    OrderLine[]
+  shipments     Shipment[]
+  invoices      Invoice[]
+  payouts       Payout[]
+  escrowEntries EscrowLedgerEntry[]
+  disputes      Dispute[]
+
+  @@index([orderId])
+  @@index([orgId, status])
+}
+
+model OrderLine {
+  id               String          @id @default(cuid())
+  orderId          String
+  order            Order           @relation(fields: [orderId], references: [id])
+  subOrderId       String?
+  subOrder         SubOrder?       @relation(fields: [subOrderId], references: [id])
+  orgId            String
+  org              Organization    @relation(fields: [orgId], references: [id])
+  quoteLineId      String?
+  quoteLine        QuoteLine?      @relation(fields: [quoteLineId], references: [id])
+  listingId        String?
+  listing          Listing?        @relation(fields: [listingId], references: [id])
+  listingVariantId String?
+  listingVariant   ListingVariant? @relation(fields: [listingVariantId], references: [id])
+  description      String
+  quantity         Int
+  unitPriceCents   Int
+  totalCents       Int
+  createdAt        DateTime        @default(now())
+
+  @@index([orderId])
+  @@index([subOrderId])
+}
+
+model Shipment {
+  id                 String         @id @default(cuid())
+  subOrderId         String
+  subOrder           SubOrder       @relation(fields: [subOrderId], references: [id])
+  orgId              String // supplier org (ops owns fulfillment state)
+  org                Organization   @relation(fields: [orgId], references: [id])
+  carrier            String?
+  trackingNumber     String?
+  easypostShipmentId String?        @unique
+  status             ShipmentStatus @default(CREATED)
+  shippedAt          DateTime?
+  deliveredAt        DateTime?
+  podFileId          String? // proof-of-delivery R2 object key
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  @@index([subOrderId])
+}
+
+model Invoice {
+  id              String        @id @default(cuid())
+  orderId         String
+  order           Order         @relation(fields: [orderId], references: [id])
+  subOrderId      String?
+  subOrder        SubOrder?     @relation(fields: [subOrderId], references: [id])
+  orgId           String // buyer org
+  org             Organization  @relation("InvoiceBuyer", fields: [orgId], references: [id])
+  supplierOrgId   String
+  supplierOrg     Organization  @relation("InvoiceSupplier", fields: [supplierOrgId], references: [id])
+  kind            InvoiceKind
+  number          String
+  status          InvoiceStatus @default(DRAFT)
+  issuedAt        DateTime?
+  dueAt           DateTime?
+  paidAt          DateTime?
+  pdfFileId       String? // R2 object key (pro-forma / commercial PDF refs)
+  subtotalCents   Int
+  taxCents        Int           @default(0)
+  totalCents      Int
+  stripeInvoiceId String?       @unique
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  payments Payment[]
+
+  @@unique([orgId, number])
+  @@index([orderId])
+}
+
+// One scheduled money event against an order. Idempotency keys survive Stripe
+// webhook replays (spec: Named failure cases).
+model Payment {
+  id                    String          @id @default(cuid())
+  orgId                 String // buyer org
+  org                   Organization    @relation(fields: [orgId], references: [id])
+  orderId               String
+  order                 Order           @relation(fields: [orderId], references: [id])
+  invoiceId             String?
+  invoice               Invoice?        @relation(fields: [invoiceId], references: [id])
+  schedule              PaymentSchedule
+  kind                  PaymentKind
+  status                PaymentStatus   @default(PENDING)
+  amountCents           Int
+  dueAt                 DateTime?
+  paidAt                DateTime?
+  stripePaymentIntentId String?         @unique
+  idempotencyKey        String          @unique
+  failureReason         String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  refunds Refund[]
+
+  @@index([orderId])
+}
+
+model Refund {
+  id             String       @id @default(cuid())
+  orgId          String // buyer org
+  org            Organization @relation(fields: [orgId], references: [id])
+  orderId        String
+  order          Order        @relation(fields: [orderId], references: [id])
+  paymentId      String?
+  payment        Payment?     @relation(fields: [paymentId], references: [id])
+  amountCents    Int
+  reason         String?
+  status         RefundStatus @default(PENDING)
+  stripeRefundId String?      @unique
+  idempotencyKey String       @unique
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+// Supplier transfer minus commission, after escrow release.
+model Payout {
+  id               String       @id @default(cuid())
+  orgId            String // supplier org
+  org              Organization @relation(fields: [orgId], references: [id])
+  orderId          String
+  order            Order        @relation(fields: [orderId], references: [id])
+  subOrderId       String?
+  subOrder         SubOrder?    @relation(fields: [subOrderId], references: [id])
+  amountCents      Int // gross
+  commissionCents  Int
+  netCents         Int // gross − commission
+  status           PayoutStatus @default(PENDING)
+  dueAt            DateTime?
+  paidAt           DateTime?
+  stripeTransferId String?      @unique
+  idempotencyKey   String       @unique
+  failureReason    String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([orderId])
+  @@index([orgId, status])
+}
+
+// Append-only ledger; the source of truth every movement reconciles from
+// (holds, releases, commission, refunds).
+model EscrowLedgerEntry {
+  id                String          @id @default(cuid())
+  orgId             String // buyer org (funds owner)
+  org               Organization    @relation(fields: [orgId], references: [id])
+  orderId           String
+  order             Order           @relation(fields: [orderId], references: [id])
+  subOrderId        String?
+  subOrder          SubOrder?       @relation(fields: [subOrderId], references: [id])
+  kind              EscrowEntryKind
+  amountCents       Int
+  balanceAfterCents Int?
+  idempotencyKey    String          @unique
+  stripeRef         String?
+  note              String?
+  occurredAt        DateTime        @default(now())
+
+  @@index([orderId])
+  @@index([orgId, occurredAt])
+}
+
+// Dispute opens from an order or sub-order, collects evidence, resolves via
+// staff mediation (optionally a partial refund before releasing the rest).
+model Dispute {
+  id               String          @id @default(cuid())
+  orgId            String // opener (buyer org)
+  org              Organization    @relation(fields: [orgId], references: [id])
+  orderId          String
+  order            Order           @relation(fields: [orderId], references: [id])
+  subOrderId       String?
+  subOrder         SubOrder?       @relation(fields: [subOrderId], references: [id])
+  openedByUserId   String
+  openedByUser     User            @relation("DisputeOpener", fields: [openedByUserId], references: [id])
+  status           DisputeStatus   @default(OPEN)
+  reason           String
+  detail           String?
+  outcome          DisputeOutcome?
+  refundCents      Int?
+  resolutionNote   String?
+  resolvedAt       DateTime?
+  resolvedByUserId String?
+  resolvedBy       User?           @relation("DisputeResolver", fields: [resolvedByUserId], references: [id])
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  evidence DisputeEvidence[]
+
+  @@index([orderId])
+  @@index([status, createdAt])
+}
+
+model DisputeEvidence {
+  id               String       @id @default(cuid())
+  disputeId        String
+  dispute          Dispute      @relation(fields: [disputeId], references: [id])
+  orgId            String
+  org              Organization @relation(fields: [orgId], references: [id])
+  fileId           String // R2 object key
+  note             String?
+  uploadedByUserId String?
+  createdAt        DateTime     @default(now())
+
+  @@index([disputeId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Trust & comms
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Chat thread per RFQ/quote/order/sample; contact sharing is a policy layer
+// over messages, never stored in them.
+model Thread {
+  id            String        @id @default(cuid())
+  kind          ThreadKind
+  buyerOrgId    String
+  buyerOrg      Organization  @relation("ThreadBuyer", fields: [buyerOrgId], references: [id])
+  supplierOrgId String?
+  supplierOrg   Organization? @relation("ThreadSupplier", fields: [supplierOrgId], references: [id])
+  rfqId         String?
+  rfq           Rfq?          @relation(fields: [rfqId], references: [id])
+  orderId       String?
+  order         Order?        @relation(fields: [orderId], references: [id])
+  sampleOrderId String?
+  sampleOrder   SampleOrder?  @relation(fields: [sampleOrderId], references: [id])
+  subject       String?
+  lastMessageAt DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  messages Message[]
+
+  @@index([buyerOrgId, lastMessageAt])
+  @@index([supplierOrgId])
+}
+
+// Per-message translation cache (originals kept, translations in `translations`).
+model Message {
+  id             String       @id @default(cuid())
+  threadId       String
+  thread         Thread       @relation(fields: [threadId], references: [id])
+  orgId          String // sender org
+  org            Organization @relation(fields: [orgId], references: [id])
+  senderUserId   String?
+  senderUser     User?        @relation(fields: [senderUserId], references: [id])
+  kind           MessageKind  @default(TEXT)
+  body           String?
+  quoteId        String? // quote card
+  quote          Quote?       @relation(fields: [quoteId], references: [id])
+  sourceLanguage String?
+  translations   Json? // cache: { [lang]: translatedBody }
+  createdAt      DateTime     @default(now())
+
+  attachments MessageAttachment[]
+
+  @@index([threadId, createdAt])
+}
+
+model MessageAttachment {
+  id        String       @id @default(cuid())
+  messageId String
+  message   Message      @relation(fields: [messageId], references: [id])
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id])
+  fileId    String // R2 object key
+  filename  String
+  mimeType  String?
+  sizeBytes Int?
+  createdAt DateTime     @default(now())
+
+  @@index([messageId])
+}
+
+// Verified-purchase-only (orderId is required); four structured rating axes.
+model Review {
+  id                      String       @id @default(cuid())
+  orgId                   String // reviewer (buyer org)
+  org                     Organization @relation("ReviewBuyer", fields: [orgId], references: [id])
+  supplierOrgId           String
+  supplierOrg             Organization @relation("ReviewSupplier", fields: [supplierOrgId], references: [id])
+  authorUserId            String
+  authorUser              User         @relation(fields: [authorUserId], references: [id])
+  listingId               String?
+  listing                 Listing?     @relation(fields: [listingId], references: [id])
+  orderId                 String
+  order                   Order        @relation(fields: [orderId], references: [id])
+  qualityRating           Int
+  communicationRating     Int
+  onTimeRating            Int
+  packagingAccuracyRating Int
+  title                   String?
+  body                    String?
+  supplierResponse        String?
+  supplierRespondedAt     DateTime?
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
+
+  photos ReviewPhoto[]
+
+  @@index([supplierOrgId])
+  @@index([listingId])
+}
+
+model ReviewPhoto {
+  id        String       @id @default(cuid())
+  reviewId  String
+  review    Review       @relation(fields: [reviewId], references: [id])
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id])
+  fileId    String // R2 object key
+  alt       String?
+  createdAt DateTime     @default(now())
+
+  @@index([reviewId])
+}
+
+// Moderation & fraud: suspicious-pricing flags, duplicate-listing reports.
+model FraudFlag {
+  id              String          @id @default(cuid())
+  orgId           String?
+  org             Organization?   @relation(fields: [orgId], references: [id])
+  subjectType     String // e.g. "listing", "quote", "message"
+  subjectId       String
+  reason          String
+  severity        String?
+  status          FraudFlagStatus @default(OPEN)
+  flaggedByUserId String?
+  resolvedAt      DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([status, createdAt])
+  @@index([subjectType, subjectId])
+}
+
+// Rate-limit dashboards read this event stream (staff admin surface).
+model RateLimitEvent {
+  id         String        @id @default(cuid())
+  orgId      String?
+  org        Organization? @relation(fields: [orgId], references: [id])
+  scope      String // e.g. "api_v1", "auth", "rfq"
+  identifier String // ip, userId, or orgId
+  createdAt  DateTime      @default(now())
+
+  @@index([scope, identifier, createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Buyer workspace
+// ─────────────────────────────────────────────────────────────────────────────
+
+model SavedList {
+  id          String       @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  ownerUserId String?
+  name        String
+  isShared    Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  items SavedListItem[]
+}
+
+model SavedListItem {
+  id          String       @id @default(cuid())
+  savedListId String
+  savedList   SavedList    @relation(fields: [savedListId], references: [id])
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  listingId   String
+  listing     Listing      @relation(fields: [listingId], references: [id])
+  note        String?
+  createdAt   DateTime     @default(now())
+
+  @@unique([savedListId, listingId])
+}
+
+model ProjectBoard {
+  id          String       @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  name        String // e.g. a "launch packaging" board per SKU launch
+  description String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  cards ProjectBoardCard[]
+}
+
+model ProjectBoardCard {
+  id        String       @id @default(cuid())
+  boardId   String
+  board     ProjectBoard @relation(fields: [boardId], references: [id])
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id])
+  title     String
+  stage     String? // board column; free per-org workflow
+  position  Int          @default(0)
+  listingId String?
+  listing   Listing?     @relation(fields: [listingId], references: [id])
+  rfqId     String?
+  rfq       Rfq?         @relation(fields: [rfqId], references: [id])
+  orderId   String?
+  order     Order?       @relation(fields: [orderId], references: [id])
+  dueAt     DateTime?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([boardId, stage, position])
+}
+
+model OrderTemplate {
+  id               String          @id @default(cuid())
+  orgId            String
+  org              Organization    @relation(fields: [orgId], references: [id])
+  name             String
+  listingId        String
+  listing          Listing         @relation(fields: [listingId], references: [id])
+  listingVariantId String?
+  listingVariant   ListingVariant? @relation(fields: [listingVariantId], references: [id])
+  quantity         Int
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  reorderRules ReorderRule[]
+}
+
+// Reorder rules: cadence + production schedule (spec: Buyer workspace).
+model ReorderRule {
+  id                 String         @id @default(cuid())
+  orgId              String
+  org                Organization   @relation(fields: [orgId], references: [id])
+  orderTemplateId    String?
+  orderTemplate      OrderTemplate? @relation(fields: [orderTemplateId], references: [id])
+  listingId          String
+  listing            Listing        @relation(fields: [listingId], references: [id])
+  cadenceDays        Int?
+  productionSchedule Json?
+  nextOrderAt        DateTime?
+  isActive           Boolean        @default(true)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+}
+
+// Per-org cost centers with spend limits; APPROVER gates orders over them.
+model CostCenter {
+  id              String       @id @default(cuid())
+  orgId           String
+  org             Organization @relation(fields: [orgId], references: [id])
+  name            String
+  code            String?
+  spendLimitCents Int?
+  budgetCents     Int?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  orders Order[]
+
+  @@index([orgId])
+}
+
+// PO number registry (spec: Buyer workspace).
+model PoNumber {
+  id        String       @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id])
+  value     String
+  usedAt    DateTime?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  orders Order[]
+
+  @@unique([orgId, value])
+}
+
+// Approval requests are a state machine, not a flag.
+model ApprovalRequest {
+  id              String         @id @default(cuid())
+  orgId           String
+  org             Organization   @relation(fields: [orgId], references: [id])
+  requesterUserId String
+  requesterUser   User           @relation("ApprovalRequester", fields: [requesterUserId], references: [id])
+  approverUserId  String?
+  approverUser    User?          @relation("ApprovalDecider", fields: [approverUserId], references: [id])
+  entityType      String // e.g. "order"
+  entityId        String
+  amountCents     Int
+  status          ApprovalStatus @default(PENDING)
+  note            String?
+  decisionNote    String?
+  decidedAt       DateTime?
+  expiresAt       DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([orgId, status])
+  @@index([entityType, entityId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Intelligence & integration
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Category × qty-band × material percentiles of normalized unit landed cost.
+// Display requires sampleCount ≥ 5 (k-anonymity); raw supplier identities
+// never appear here — platform-global by design, not org-scoped.
+model PriceBenchmark {
+  id          String   @id @default(cuid())
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  qtyBand     String // canonical band key, e.g. "1000-4999"
+  material    String
+  sampleCount Int
+  medianCents Int
+  p25Cents    Int
+  p75Cents    Int
+  computedAt  DateTime @default(now())
+
+  @@unique([categoryId, qtyBand, material])
+}
+
+// Gemini embeddings over title + attributes + spec text. The vector column and
+// the HNSW cosine index are created in the init migration (raw SQL — Prisma
+// cannot express either); read/write via $queryRaw.
+model ListingEmbedding {
+  id          String                      @id @default(cuid())
+  listingId   String
+  listing     Listing                     @relation(fields: [listingId], references: [id])
+  orgId       String
+  org         Organization                @relation(fields: [orgId], references: [id])
+  kind        EmbeddingKind
+  model       String? // adapter model identifier
+  dimensions  Int                         @default(1536)
+  embedding   Unsupported("vector(1536)")
+  textPreview String? // first ~200 chars of the embedded text, for debugging
+  createdAt   DateTime                    @default(now())
+  updatedAt   DateTime                    @updatedAt
+
+  @@unique([listingId, kind])
+  @@index([listingId])
+}
+
+// Inbound Aekovera OS project references so packaging commissions attach to
+// the right brand project (spec: Agent-readable catalog and OS integration).
+model AekoveraProjectRef {
+  id          String       @id @default(cuid())
+  orgId       String // the buyer/brand org the project belongs to
+  org         Organization @relation(fields: [orgId], references: [id])
+  projectRef  String
+  brandOrgRef String?
+  source      String       @default("inbound_webhook") // inbound_webhook | manual
+  payload     Json?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  orders Order[]
+
+  @@unique([orgId, projectRef])
+}
+
+// Delivery-logged webhook traffic (outbound to Aekovera OS, inbound project
+// refs) with retries.
+model WebhookDelivery {
+  id             String                @id @default(cuid())
+  orgId          String?
+  org            Organization?         @relation(fields: [orgId], references: [id])
+  direction      WebhookDirection
+  event          String // e.g. "sourcing.project.packaging_stage"
+  url            String?
+  projectRef     String?
+  payload        Json?
+  status         WebhookDeliveryStatus @default(PENDING)
+  attempts       Int                   @default(0)
+  responseStatus Int?
+  lastError      String?
+  nextRetryAt    DateTime?
+  deliveredAt    DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@index([direction, status, createdAt])
 }
