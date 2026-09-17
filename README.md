@@ -2,6 +2,8 @@
 
 Aekovera's CPG packaging marketplace: discover packaging suppliers, run RFQs, negotiate, and buy with escrow-protected payments. Greenfield monorepo in `teamaekovera-glitch/alibaba` — architecture, domain model, and locked decisions live in the approved spec (Blueprint artifact `art_tooqnEmJ`).
 
+📄 **A detailed implementation summary — PR index, architecture, CI workflows, test matrix, and local runbook — lives in [docs/IMPLEMENTATION-SUMMARY.md](docs/IMPLEMENTATION-SUMMARY.md).**
+
 ## Stack
 
 - pnpm 10.34.5 + Turborepo workspaces, Node 20+, TypeScript strict
