@@ -1,0 +1,7 @@
+# Obvious repo policy — teamaekovera-glitch/alibaba
+# Auto-detected from GitHub repo settings on 2026-09-17.
+branches:
+  default: main
+merge:
+  method: merge   # all merge methods (merge, squash, rebase) are enabled on GitHub; using GitHub's default
+  requireHumanMerge: true
