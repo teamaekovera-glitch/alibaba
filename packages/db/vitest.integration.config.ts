@@ -5,5 +5,8 @@ export default defineConfig({
   test: {
     include: ["tests/integration/**/*.test.ts"],
     passWithNoTests: true,
+    // All suites share one pgvector service; serialize files so a suite's
+    // migrate/truncate setup cannot race another suite's assertions.
+    fileParallelism: false,
   },
 });

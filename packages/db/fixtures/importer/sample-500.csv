@@ -1,0 +1,501 @@
+name,city,state,country,email,phone,domain,categories,certifications,about
+Summit Packaging,Chicago,,US,,(555) 010-2000,,rigid,SQF,Family-owned summit converter serving the Midwest.
+Crestline Packaging,Dallas,TX,US,sales@crestline-packaging.example,555.010.2001,crestline-packaging.example,glass-bottles,,
+Orion Packaging,Atlanta,GA,US,sales@orion-packaging.example,+1 555-010-2002,orion-packaging.example,jars,,
+Harborview Packaging,Denver,CO,US,sales@harborview-packaging.example,(555) 010-2003,harborview-packaging.example,cans;rigid,,
+Meridian Packaging,Portland,OR,US,sales@meridian-packaging.example,555.010.2004,meridian-packaging.example,pet-bottles,BRCGS,
+Lakeshore Packaging,Nashville,TN,US,sales@lakeshore-packaging.example,+1 555-010-2005,lakeshore-packaging.example,hdpe-bottles,,Family-owned lakeshore converter serving the Midwest.
+Vanguard Packaging,Charlotte,NC,US,,(555) 010-2006,vanguard-packaging.example,flexible;rigid,,
+Pinnacle Packaging,Columbus,OH,US,sales@pinnacle-packaging.example,555.010.2007,pinnacle-packaging.example,stand-up-pouches,,
+Bluegrass Packaging,Phoenix,AZ,US,sales@bluegrass-packaging.example,+1 555-010-2008,bluegrass-packaging.example,spouted-pouches,FDA_REGISTRATION,
+Copperfield Packaging,Kansas City,,US,sales@copperfield-packaging.example,(555) 010-2009,copperfield-packaging.example,sachets;rigid,,
+Stonebridge Packaging,Milwaukee,WI,US,sales@stonebridge-packaging.example,555.010.2010,stonebridge-packaging.example,films,,Family-owned stonebridge converter serving the Midwest.
+Fairwind Packaging,Raleigh,NC,US,sales@fairwind-packaging.example,+1 555-010-2011,,roll-stock,,
+Northstar Packaging,Omaha,NE,US,,(555) 010-2012,northstar-packaging.example,paperboard;rigid,ORGANIC,
+Redstone Packaging,Tulsa,OK,US,sales@redstone-packaging.example,555.010.2013,redstone-packaging.example,folding-cartons,,
+Silvercreek Packaging,Fresno,CA,US,sales@silvercreek-packaging.example,+1 555-010-2014,silvercreek-packaging.example,rigid-boxes,,
+Trueline Packaging,Sacramento,CA,US,sales@trueline-packaging.example,(555) 010-2015,trueline-packaging.example,corrugated;rigid,,Family-owned trueline converter serving the Midwest.
+Waypoint Packaging,Louisville,KY,US,sales@waypoint-packaging.example,555.010.2016,waypoint-packaging.example,closures-caps,SQF,
+Juniper Packaging,Birmingham,AL,US,sales@juniper-packaging.example,+1 555-010-2017,juniper-packaging.example,labels-shrink-sleeves,,
+Cascadia Packaging,Richmond,,US,,(555) 010-2018,cascadia-packaging.example,trays-clamshells;rigid,,
+Dunmore Packaging,Salt Lake City,UT,US,sales@dunmore-packaging.example,555.010.2019,dunmore-packaging.example,secondary-tertiary,,
+Elmwood Packaging,Indianapolis,IN,US,sales@elmwood-packaging.example,+1 555-010-2020,elmwood-packaging.example,sustainable-compostable,BRCGS,Family-owned elmwood converter serving the Midwest.
+Foxfield Packaging,Pittsburgh,PA,US,sales@foxfield-packaging.example,(555) 010-2021,foxfield-packaging.example,rigid,,
+Glenview Packaging,Cleveland,OH,US,sales@glenview-packaging.example,555.010.2022,,glass-bottles,,
+Hartwell Packaging,Minneapolis,MN,US,sales@hartwell-packaging.example,+1 555-010-2023,hartwell-packaging.example,jars,,
+Ironwood Packaging,St. Louis,MO,US,,(555) 010-2024,ironwood-packaging.example,cans;rigid,FDA_REGISTRATION,
+Kestrel Packaging,Hartford,CT,US,sales@kestrel-packaging.example,555.010.2025,kestrel-packaging.example,pet-bottles,,Family-owned kestrel converter serving the Midwest.
+Longleaf Packaging,Grand Rapids,MI,US,sales@longleaf-packaging.example,+1 555-010-2026,longleaf-packaging.example,hdpe-bottles,,
+Maplewood Packaging,Des Moines,,US,sales@maplewood-packaging.example,(555) 010-2027,maplewood-packaging.example,flexible;rigid,,
+Newbury Packaging,Boise,ID,US,sales@newbury-packaging.example,555.010.2028,newbury-packaging.example,stand-up-pouches,ORGANIC,
+Oakfield Packaging,Little Rock,AR,US,sales@oakfield-packaging.example,+1 555-010-2029,oakfield-packaging.example,spouted-pouches,,
+Pinehurst Packaging,Knoxville,TN,US,,(555) 010-2030,pinehurst-packaging.example,sachets;rigid,,Family-owned pinehurst converter serving the Midwest.
+Quarryhill Packaging,Wichita,KS,US,sales@quarryhill-packaging.example,555.010.2031,quarryhill-packaging.example,films,,
+Riverbend Packaging,Providence,RI,US,sales@riverbend-packaging.example,+1 555-010-2032,riverbend-packaging.example,roll-stock,SQF,
+Sagebrush Packaging,Buffalo,NY,US,sales@sagebrush-packaging.example,(555) 010-2033,,paperboard;rigid,,
+Thornbury Packaging,Akron,OH,US,sales@thornbury-packaging.example,555.010.2034,thornbury-packaging.example,folding-cartons,,
+Ulster Packaging,Toledo,OH,US,sales@ulster-packaging.example,+1 555-010-2035,ulster-packaging.example,rigid-boxes,,Family-owned ulster converter serving the Midwest.
+Vinebrook Packaging,Green Bay,,US,,(555) 010-2036,vinebrook-packaging.example,corrugated;rigid,BRCGS,
+Westgate Packaging,Chattanooga,TN,US,sales@westgate-packaging.example,555.010.2037,westgate-packaging.example,closures-caps,,
+Yarrow Packaging,Spokane,WA,US,sales@yarrow-packaging.example,+1 555-010-2038,yarrow-packaging.example,labels-shrink-sleeves,,
+Ashford Packaging,Albany,NY,US,sales@ashford-packaging.example,(555) 010-2039,ashford-packaging.example,trays-clamshells;rigid,,
+Briarcliff Packaging,Chicago,IL,US,sales@briarcliff-packaging.example,555.010.2040,briarcliff-packaging.example,secondary-tertiary,FDA_REGISTRATION,Family-owned briarcliff converter serving the Midwest.
+Cedarville Packaging,Dallas,TX,US,sales@cedarville-packaging.example,+1 555-010-2041,cedarville-packaging.example,sustainable-compostable,,
+Dovercourt Packaging,Atlanta,GA,US,,(555) 010-2042,dovercourt-packaging.example,rigid,,
+Eastbrook Packaging,Denver,CO,US,sales@eastbrook-packaging.example,555.010.2043,eastbrook-packaging.example,glass-bottles,,
+Fernhill Packaging,Portland,OR,US,sales@fernhill-packaging.example,+1 555-010-2044,,jars,ORGANIC,
+Grandview Packaging,Nashville,,US,sales@grandview-packaging.example,(555) 010-2045,grandview-packaging.example,cans;rigid,,Family-owned grandview converter serving the Midwest.
+Holloway Packaging,Charlotte,NC,US,sales@holloway-packaging.example,555.010.2046,holloway-packaging.example,pet-bottles,,
+Inglewood Packaging,Columbus,OH,US,sales@inglewood-packaging.example,+1 555-010-2047,inglewood-packaging.example,hdpe-bottles,,
+Jamestown Packaging,Phoenix,AZ,US,,(555) 010-2048,jamestown-packaging.example,flexible;rigid,SQF,
+Kingsport Packaging,Kansas City,MO,US,sales@kingsport-packaging.example,555.010.2049,kingsport-packaging.example,stand-up-pouches,,
+Larkspur Packaging,Milwaukee,WI,US,sales@larkspur-packaging.example,+1 555-010-2050,larkspur-packaging.example,spouted-pouches,,Family-owned larkspur converter serving the Midwest.
+Montclair Packaging,Raleigh,NC,US,sales@montclair-packaging.example,(555) 010-2051,montclair-packaging.example,sachets;rigid,,
+Norwood Packaging,Omaha,NE,US,sales@norwood-packaging.example,555.010.2052,norwood-packaging.example,films,BRCGS,
+Oakhurst Packaging,Tulsa,OK,US,sales@oakhurst-packaging.example,+1 555-010-2053,oakhurst-packaging.example,roll-stock,,
+Parkside Packaging,Fresno,,US,,(555) 010-2054,parkside-packaging.example,paperboard;rigid,,
+Quinby Packaging,Sacramento,CA,US,sales@quinby-packaging.example,555.010.2055,,folding-cartons,,Family-owned quinby converter serving the Midwest.
+Ridgefield Packaging,Louisville,KY,US,sales@ridgefield-packaging.example,+1 555-010-2056,ridgefield-packaging.example,rigid-boxes,FDA_REGISTRATION,
+Selma Packaging,Birmingham,AL,US,sales@selma-packaging.example,(555) 010-2057,selma-packaging.example,corrugated;rigid,,
+Tiburon Packaging,Richmond,VA,US,sales@tiburon-packaging.example,555.010.2058,tiburon-packaging.example,closures-caps,,
+Upton Packaging,Salt Lake City,UT,US,sales@upton-packaging.example,+1 555-010-2059,upton-packaging.example,labels-shrink-sleeves,,
+Valleymount Packaging,Indianapolis,IN,US,,(555) 010-2060,valleymount-packaging.example,trays-clamshells;rigid,ORGANIC,Family-owned valleymount converter serving the Midwest.
+Wexford Packaging,Pittsburgh,PA,US,sales@wexford-packaging.example,555.010.2061,wexford-packaging.example,secondary-tertiary,,
+Yorkville Packaging,Cleveland,OH,US,sales@yorkville-packaging.example,+1 555-010-2062,yorkville-packaging.example,sustainable-compostable,,
+Zionsville Packaging,Minneapolis,,US,sales@zionsville-packaging.example,(555) 010-2063,zionsville-packaging.example,rigid,,
+Amberly Packaging,St. Louis,MO,US,sales@amberly-packaging.example,555.010.2064,amberly-packaging.example,glass-bottles,SQF,
+Bellhaven Packaging,Hartford,CT,US,sales@bellhaven-packaging.example,+1 555-010-2065,bellhaven-packaging.example,jars,,Family-owned bellhaven converter serving the Midwest.
+Collinswood Packaging,Grand Rapids,MI,US,,(555) 010-2066,,cans;rigid,,
+Drayton Packaging,Des Moines,IA,US,sales@drayton-packaging.example,555.010.2067,drayton-packaging.example,pet-bottles,,
+Ellsworth Packaging,Boise,ID,US,sales@ellsworth-packaging.example,+1 555-010-2068,ellsworth-packaging.example,hdpe-bottles,BRCGS,
+Fenwick Packaging,Little Rock,AR,US,sales@fenwick-packaging.example,(555) 010-2069,fenwick-packaging.example,flexible;rigid,,
+Summit Container Co.,Knoxville,TN,US,sales@summit-container.example,555.010.2070,summit-container.example,stand-up-pouches,,Family-owned summit converter serving the Midwest.
+Crestline Container Co.,Wichita,KS,US,sales@crestline-container.example,+1 555-010-2071,crestline-container.example,spouted-pouches,,
+Orion Container Co.,Providence,,US,,(555) 010-2072,orion-container.example,sachets;rigid,FDA_REGISTRATION,
+Harborview Container Co.,Buffalo,NY,US,sales@harborview-container.example,555.010.2073,harborview-container.example,films,,
+Meridian Container Co.,Akron,OH,US,sales@meridian-container.example,+1 555-010-2074,meridian-container.example,roll-stock,,
+Lakeshore Container Co.,Toledo,OH,US,sales@lakeshore-container.example,(555) 010-2075,lakeshore-container.example,paperboard;rigid,,Family-owned lakeshore converter serving the Midwest.
+Vanguard Container Co.,Green Bay,WI,US,sales@vanguard-container.example,555.010.2076,vanguard-container.example,folding-cartons,ORGANIC,
+Pinnacle Container Co.,Chattanooga,TN,US,sales@pinnacle-container.example,+1 555-010-2077,,rigid-boxes,,
+Bluegrass Container Co.,Spokane,WA,US,,(555) 010-2078,bluegrass-container.example,corrugated;rigid,,
+Copperfield Container Co.,Albany,NY,US,sales@copperfield-container.example,555.010.2079,copperfield-container.example,closures-caps,,
+Stonebridge Container Co.,Chicago,IL,US,sales@stonebridge-container.example,+1 555-010-2080,stonebridge-container.example,labels-shrink-sleeves,SQF,Family-owned stonebridge converter serving the Midwest.
+Fairwind Container Co.,Dallas,,US,sales@fairwind-container.example,(555) 010-2081,fairwind-container.example,trays-clamshells;rigid,,
+Northstar Container Co.,Atlanta,GA,US,sales@northstar-container.example,555.010.2082,northstar-container.example,secondary-tertiary,,
+Redstone Container Co.,Denver,CO,US,sales@redstone-container.example,+1 555-010-2083,redstone-container.example,sustainable-compostable,,
+Silvercreek Container Co.,Portland,OR,US,,(555) 010-2084,silvercreek-container.example,rigid,BRCGS,
+Trueline Container Co.,Nashville,TN,US,sales@trueline-container.example,555.010.2085,trueline-container.example,glass-bottles,,Family-owned trueline converter serving the Midwest.
+Waypoint Container Co.,Charlotte,NC,US,sales@waypoint-container.example,+1 555-010-2086,waypoint-container.example,jars,,
+Juniper Container Co.,Columbus,OH,US,sales@juniper-container.example,(555) 010-2087,juniper-container.example,cans;rigid,,
+Cascadia Container Co.,Phoenix,AZ,US,sales@cascadia-container.example,555.010.2088,,pet-bottles,FDA_REGISTRATION,
+Dunmore Container Co.,Kansas City,MO,US,sales@dunmore-container.example,+1 555-010-2089,dunmore-container.example,hdpe-bottles,,
+Elmwood Container Co.,Milwaukee,,US,,(555) 010-2090,elmwood-container.example,flexible;rigid,,Family-owned elmwood converter serving the Midwest.
+Foxfield Container Co.,Raleigh,NC,US,sales@foxfield-container.example,555.010.2091,foxfield-container.example,stand-up-pouches,,
+Glenview Container Co.,Omaha,NE,US,sales@glenview-container.example,+1 555-010-2092,glenview-container.example,spouted-pouches,ORGANIC,
+Hartwell Container Co.,Tulsa,OK,US,sales@hartwell-container.example,(555) 010-2093,hartwell-container.example,sachets;rigid,,
+Ironwood Container Co.,Fresno,CA,US,sales@ironwood-container.example,555.010.2094,ironwood-container.example,films,,
+Kestrel Container Co.,Sacramento,CA,US,sales@kestrel-container.example,+1 555-010-2095,kestrel-container.example,roll-stock,,Family-owned kestrel converter serving the Midwest.
+Longleaf Container Co.,Louisville,KY,US,,(555) 010-2096,longleaf-container.example,paperboard;rigid,SQF,
+Maplewood Container Co.,Birmingham,AL,US,sales@maplewood-container.example,555.010.2097,maplewood-container.example,folding-cartons,,
+Newbury Container Co.,Richmond,VA,US,sales@newbury-container.example,+1 555-010-2098,newbury-container.example,rigid-boxes,,
+Oakfield Container Co.,Salt Lake City,,US,sales@oakfield-container.example,(555) 010-2099,,corrugated;rigid,,
+Pinehurst Container Co.,Indianapolis,IN,US,sales@pinehurst-container.example,555.010.2100,pinehurst-container.example,closures-caps,BRCGS,Family-owned pinehurst converter serving the Midwest.
+Quarryhill Container Co.,Pittsburgh,PA,US,sales@quarryhill-container.example,+1 555-010-2101,quarryhill-container.example,labels-shrink-sleeves,,
+Riverbend Container Co.,Cleveland,OH,US,,(555) 010-2102,riverbend-container.example,trays-clamshells;rigid,,
+Sagebrush Container Co.,Minneapolis,MN,US,sales@sagebrush-container.example,555.010.2103,sagebrush-container.example,secondary-tertiary,,
+Thornbury Container Co.,St. Louis,MO,US,sales@thornbury-container.example,+1 555-010-2104,thornbury-container.example,sustainable-compostable,FDA_REGISTRATION,
+Ulster Container Co.,Hartford,CT,US,sales@ulster-container.example,(555) 010-2105,ulster-container.example,rigid,,Family-owned ulster converter serving the Midwest.
+Vinebrook Container Co.,Grand Rapids,MI,US,sales@vinebrook-container.example,555.010.2106,vinebrook-container.example,glass-bottles,,
+Westgate Container Co.,Des Moines,IA,US,sales@westgate-container.example,+1 555-010-2107,westgate-container.example,jars,,
+Yarrow Container Co.,Boise,,US,,(555) 010-2108,yarrow-container.example,cans;rigid,ORGANIC,
+Ashford Container Co.,Little Rock,AR,US,sales@ashford-container.example,555.010.2109,ashford-container.example,pet-bottles,,
+Briarcliff Container Co.,Knoxville,TN,US,sales@briarcliff-container.example,+1 555-010-2110,,hdpe-bottles,,Family-owned briarcliff converter serving the Midwest.
+Cedarville Container Co.,Wichita,KS,US,sales@cedarville-container.example,(555) 010-2111,cedarville-container.example,flexible;rigid,,
+Dovercourt Container Co.,Providence,RI,US,sales@dovercourt-container.example,555.010.2112,dovercourt-container.example,stand-up-pouches,SQF,
+Eastbrook Container Co.,Buffalo,NY,US,sales@eastbrook-container.example,+1 555-010-2113,eastbrook-container.example,spouted-pouches,,
+Fernhill Container Co.,Akron,OH,US,,(555) 010-2114,fernhill-container.example,sachets;rigid,,
+Grandview Container Co.,Toledo,OH,US,sales@grandview-container.example,555.010.2115,grandview-container.example,films,,Family-owned grandview converter serving the Midwest.
+Holloway Container Co.,Green Bay,WI,US,sales@holloway-container.example,+1 555-010-2116,holloway-container.example,roll-stock,BRCGS,
+Inglewood Container Co.,Chattanooga,,US,sales@inglewood-container.example,(555) 010-2117,inglewood-container.example,paperboard;rigid,,
+Jamestown Container Co.,Spokane,WA,US,sales@jamestown-container.example,555.010.2118,jamestown-container.example,folding-cartons,,
+Kingsport Container Co.,Albany,NY,US,sales@kingsport-container.example,+1 555-010-2119,kingsport-container.example,rigid-boxes,,
+Larkspur Container Co.,Chicago,IL,US,,(555) 010-2120,larkspur-container.example,corrugated;rigid,FDA_REGISTRATION,Family-owned larkspur converter serving the Midwest.
+Montclair Container Co.,Dallas,TX,US,sales@montclair-container.example,555.010.2121,,closures-caps,,
+Norwood Container Co.,Atlanta,GA,US,sales@norwood-container.example,+1 555-010-2122,norwood-container.example,labels-shrink-sleeves,,
+Oakhurst Container Co.,Denver,CO,US,sales@oakhurst-container.example,(555) 010-2123,oakhurst-container.example,trays-clamshells;rigid,,
+Parkside Container Co.,Portland,OR,US,sales@parkside-container.example,555.010.2124,parkside-container.example,secondary-tertiary,ORGANIC,
+Quinby Container Co.,Nashville,TN,US,sales@quinby-container.example,+1 555-010-2125,quinby-container.example,sustainable-compostable,,Family-owned quinby converter serving the Midwest.
+Ridgefield Container Co.,Charlotte,,US,,(555) 010-2126,ridgefield-container.example,rigid,,
+Selma Container Co.,Columbus,OH,US,sales@selma-container.example,555.010.2127,selma-container.example,glass-bottles,,
+Tiburon Container Co.,Phoenix,AZ,US,sales@tiburon-container.example,+1 555-010-2128,tiburon-container.example,jars,SQF,
+Upton Container Co.,Kansas City,MO,US,sales@upton-container.example,(555) 010-2129,upton-container.example,cans;rigid,,
+Valleymount Container Co.,Milwaukee,WI,US,sales@valleymount-container.example,555.010.2130,valleymount-container.example,pet-bottles,,Family-owned valleymount converter serving the Midwest.
+Wexford Container Co.,Raleigh,NC,US,sales@wexford-container.example,+1 555-010-2131,wexford-container.example,hdpe-bottles,,
+Yorkville Container Co.,Omaha,NE,US,,(555) 010-2132,,flexible;rigid,BRCGS,
+Zionsville Container Co.,Tulsa,OK,US,sales@zionsville-container.example,555.010.2133,zionsville-container.example,stand-up-pouches,,
+Amberly Container Co.,Fresno,CA,US,sales@amberly-container.example,+1 555-010-2134,amberly-container.example,spouted-pouches,,
+Bellhaven Container Co.,Sacramento,,US,sales@bellhaven-container.example,(555) 010-2135,bellhaven-container.example,sachets;rigid,,Family-owned bellhaven converter serving the Midwest.
+Collinswood Container Co.,Louisville,KY,US,sales@collinswood-container.example,555.010.2136,collinswood-container.example,films,FDA_REGISTRATION,
+Drayton Container Co.,Birmingham,AL,US,sales@drayton-container.example,+1 555-010-2137,drayton-container.example,roll-stock,,
+Ellsworth Container Co.,Richmond,VA,US,,(555) 010-2138,ellsworth-container.example,paperboard;rigid,,
+Fenwick Container Co.,Salt Lake City,UT,US,sales@fenwick-container.example,555.010.2139,fenwick-container.example,folding-cartons,,
+Summit Plastics,Indianapolis,IN,US,sales@summit-plastics.example,+1 555-010-2140,summit-plastics.example,rigid-boxes,ORGANIC,Family-owned summit converter serving the Midwest.
+Crestline Plastics,Pittsburgh,PA,US,sales@crestline-plastics.example,(555) 010-2141,crestline-plastics.example,corrugated;rigid,,
+Orion Plastics,Cleveland,OH,US,sales@orion-plastics.example,555.010.2142,orion-plastics.example,closures-caps,,
+Harborview Plastics,Minneapolis,MN,US,sales@harborview-plastics.example,+1 555-010-2143,,labels-shrink-sleeves,,
+Meridian Plastics,St. Louis,,US,,(555) 010-2144,meridian-plastics.example,trays-clamshells;rigid,SQF,
+Lakeshore Plastics,Hartford,CT,US,sales@lakeshore-plastics.example,555.010.2145,lakeshore-plastics.example,secondary-tertiary,,Family-owned lakeshore converter serving the Midwest.
+Vanguard Plastics,Grand Rapids,MI,US,sales@vanguard-plastics.example,+1 555-010-2146,vanguard-plastics.example,sustainable-compostable,,
+Pinnacle Plastics,Des Moines,IA,US,sales@pinnacle-plastics.example,(555) 010-2147,pinnacle-plastics.example,rigid,,
+Bluegrass Plastics,Boise,ID,US,sales@bluegrass-plastics.example,555.010.2148,bluegrass-plastics.example,glass-bottles,BRCGS,
+Copperfield Plastics,Little Rock,AR,US,sales@copperfield-plastics.example,+1 555-010-2149,copperfield-plastics.example,jars,,
+Stonebridge Plastics,Knoxville,TN,US,,(555) 010-2150,stonebridge-plastics.example,cans;rigid,,Family-owned stonebridge converter serving the Midwest.
+Fairwind Plastics,Wichita,KS,US,sales@fairwind-plastics.example,555.010.2151,fairwind-plastics.example,pet-bottles,,
+Northstar Plastics,Providence,RI,US,sales@northstar-plastics.example,+1 555-010-2152,northstar-plastics.example,hdpe-bottles,FDA_REGISTRATION,
+Redstone Plastics,Buffalo,,US,sales@redstone-plastics.example,(555) 010-2153,redstone-plastics.example,flexible;rigid,,
+Silvercreek Plastics,Akron,OH,US,sales@silvercreek-plastics.example,555.010.2154,,stand-up-pouches,,
+Trueline Plastics,Toledo,OH,US,sales@trueline-plastics.example,+1 555-010-2155,trueline-plastics.example,spouted-pouches,,Family-owned trueline converter serving the Midwest.
+Waypoint Plastics,Green Bay,WI,US,,(555) 010-2156,waypoint-plastics.example,sachets;rigid,ORGANIC,
+Juniper Plastics,Chattanooga,TN,US,sales@juniper-plastics.example,555.010.2157,juniper-plastics.example,films,,
+Cascadia Plastics,Spokane,WA,US,sales@cascadia-plastics.example,+1 555-010-2158,cascadia-plastics.example,roll-stock,,
+Dunmore Plastics,Albany,NY,US,sales@dunmore-plastics.example,(555) 010-2159,dunmore-plastics.example,paperboard;rigid,,
+Elmwood Plastics,Chicago,IL,US,sales@elmwood-plastics.example,555.010.2160,elmwood-plastics.example,folding-cartons,SQF,Family-owned elmwood converter serving the Midwest.
+Foxfield Plastics,Dallas,TX,US,sales@foxfield-plastics.example,+1 555-010-2161,foxfield-plastics.example,rigid-boxes,,
+Glenview Plastics,Atlanta,,US,,(555) 010-2162,glenview-plastics.example,corrugated;rigid,,
+Hartwell Plastics,Denver,CO,US,sales@hartwell-plastics.example,555.010.2163,hartwell-plastics.example,closures-caps,,
+Ironwood Plastics,Portland,OR,US,sales@ironwood-plastics.example,+1 555-010-2164,ironwood-plastics.example,labels-shrink-sleeves,BRCGS,
+Kestrel Plastics,Nashville,TN,US,sales@kestrel-plastics.example,(555) 010-2165,,trays-clamshells;rigid,,Family-owned kestrel converter serving the Midwest.
+Longleaf Plastics,Charlotte,NC,US,sales@longleaf-plastics.example,555.010.2166,longleaf-plastics.example,secondary-tertiary,,
+Maplewood Plastics,Columbus,OH,US,sales@maplewood-plastics.example,+1 555-010-2167,maplewood-plastics.example,sustainable-compostable,,
+Newbury Plastics,Phoenix,AZ,US,,(555) 010-2168,newbury-plastics.example,rigid,FDA_REGISTRATION,
+Oakfield Plastics,Kansas City,MO,US,sales@oakfield-plastics.example,555.010.2169,oakfield-plastics.example,glass-bottles,,
+Pinehurst Plastics,Milwaukee,WI,US,sales@pinehurst-plastics.example,+1 555-010-2170,pinehurst-plastics.example,jars,,Family-owned pinehurst converter serving the Midwest.
+Quarryhill Plastics,Raleigh,,US,sales@quarryhill-plastics.example,(555) 010-2171,quarryhill-plastics.example,cans;rigid,,
+Riverbend Plastics,Omaha,NE,US,sales@riverbend-plastics.example,555.010.2172,riverbend-plastics.example,pet-bottles,ORGANIC,
+Sagebrush Plastics,Tulsa,OK,US,sales@sagebrush-plastics.example,+1 555-010-2173,sagebrush-plastics.example,hdpe-bottles,,
+Thornbury Plastics,Fresno,CA,US,,(555) 010-2174,thornbury-plastics.example,flexible;rigid,,
+Ulster Plastics,Sacramento,CA,US,sales@ulster-plastics.example,555.010.2175,ulster-plastics.example,stand-up-pouches,,Family-owned ulster converter serving the Midwest.
+Vinebrook Plastics,Louisville,KY,US,sales@vinebrook-plastics.example,+1 555-010-2176,,spouted-pouches,SQF,
+Westgate Plastics,Birmingham,AL,US,sales@westgate-plastics.example,(555) 010-2177,westgate-plastics.example,sachets;rigid,,
+Yarrow Plastics,Richmond,VA,US,sales@yarrow-plastics.example,555.010.2178,yarrow-plastics.example,films,,
+Ashford Plastics,Salt Lake City,UT,US,sales@ashford-plastics.example,+1 555-010-2179,ashford-plastics.example,roll-stock,,
+Briarcliff Plastics,Indianapolis,,US,,(555) 010-2180,briarcliff-plastics.example,paperboard;rigid,BRCGS,Family-owned briarcliff converter serving the Midwest.
+Cedarville Plastics,Pittsburgh,PA,US,sales@cedarville-plastics.example,555.010.2181,cedarville-plastics.example,folding-cartons,,
+Dovercourt Plastics,Cleveland,OH,US,sales@dovercourt-plastics.example,+1 555-010-2182,dovercourt-plastics.example,rigid-boxes,,
+Eastbrook Plastics,Minneapolis,MN,US,sales@eastbrook-plastics.example,(555) 010-2183,eastbrook-plastics.example,corrugated;rigid,,
+Fernhill Plastics,St. Louis,MO,US,sales@fernhill-plastics.example,555.010.2184,fernhill-plastics.example,closures-caps,FDA_REGISTRATION,
+Grandview Plastics,Hartford,CT,US,sales@grandview-plastics.example,+1 555-010-2185,grandview-plastics.example,labels-shrink-sleeves,,Family-owned grandview converter serving the Midwest.
+Holloway Plastics,Grand Rapids,MI,US,,(555) 010-2186,holloway-plastics.example,trays-clamshells;rigid,,
+Inglewood Plastics,Des Moines,IA,US,sales@inglewood-plastics.example,555.010.2187,,secondary-tertiary,,
+Jamestown Plastics,Boise,ID,US,sales@jamestown-plastics.example,+1 555-010-2188,jamestown-plastics.example,sustainable-compostable,ORGANIC,
+Kingsport Plastics,Little Rock,,US,sales@kingsport-plastics.example,(555) 010-2189,kingsport-plastics.example,rigid,,
+Larkspur Plastics,Knoxville,TN,US,sales@larkspur-plastics.example,555.010.2190,larkspur-plastics.example,glass-bottles,,Family-owned larkspur converter serving the Midwest.
+Montclair Plastics,Wichita,KS,US,sales@montclair-plastics.example,+1 555-010-2191,montclair-plastics.example,jars,,
+Norwood Plastics,Providence,RI,US,,(555) 010-2192,norwood-plastics.example,cans;rigid,SQF,
+Oakhurst Plastics,Buffalo,NY,US,sales@oakhurst-plastics.example,555.010.2193,oakhurst-plastics.example,pet-bottles,,
+Parkside Plastics,Akron,OH,US,sales@parkside-plastics.example,+1 555-010-2194,parkside-plastics.example,hdpe-bottles,,
+Quinby Plastics,Toledo,OH,US,sales@quinby-plastics.example,(555) 010-2195,quinby-plastics.example,flexible;rigid,,Family-owned quinby converter serving the Midwest.
+Ridgefield Plastics,Green Bay,WI,US,sales@ridgefield-plastics.example,555.010.2196,ridgefield-plastics.example,stand-up-pouches,BRCGS,
+Selma Plastics,Chattanooga,TN,US,sales@selma-plastics.example,+1 555-010-2197,selma-plastics.example,spouted-pouches,,
+Tiburon Plastics,Spokane,,US,,(555) 010-2198,,sachets;rigid,,
+Upton Plastics,Albany,NY,US,sales@upton-plastics.example,555.010.2199,upton-plastics.example,films,,
+Valleymount Plastics,Chicago,IL,US,sales@valleymount-plastics.example,+1 555-010-2200,valleymount-plastics.example,roll-stock,FDA_REGISTRATION,Family-owned valleymount converter serving the Midwest.
+Wexford Plastics,Dallas,TX,US,sales@wexford-plastics.example,(555) 010-2201,wexford-plastics.example,paperboard;rigid,,
+Yorkville Plastics,Atlanta,GA,US,sales@yorkville-plastics.example,555.010.2202,yorkville-plastics.example,folding-cartons,,
+Zionsville Plastics,Denver,CO,US,sales@zionsville-plastics.example,+1 555-010-2203,zionsville-plastics.example,rigid-boxes,,
+Amberly Plastics,Portland,OR,US,,(555) 010-2204,amberly-plastics.example,corrugated;rigid,ORGANIC,
+Bellhaven Plastics,Nashville,TN,US,sales@bellhaven-plastics.example,555.010.2205,bellhaven-plastics.example,closures-caps,,Family-owned bellhaven converter serving the Midwest.
+Collinswood Plastics,Charlotte,NC,US,sales@collinswood-plastics.example,+1 555-010-2206,collinswood-plastics.example,labels-shrink-sleeves,,
+Drayton Plastics,Columbus,,US,sales@drayton-plastics.example,(555) 010-2207,drayton-plastics.example,trays-clamshells;rigid,,
+Ellsworth Plastics,Phoenix,AZ,US,sales@ellsworth-plastics.example,555.010.2208,ellsworth-plastics.example,secondary-tertiary,SQF,
+Fenwick Plastics,Kansas City,MO,US,sales@fenwick-plastics.example,+1 555-010-2209,,sustainable-compostable,,
+Summit Converting,Milwaukee,WI,US,,(555) 010-2210,summit-converting.example,rigid,,Family-owned summit converter serving the Midwest.
+Crestline Converting,Raleigh,NC,US,sales@crestline-converting.example,555.010.2211,crestline-converting.example,glass-bottles,,
+Orion Converting,Omaha,NE,US,sales@orion-converting.example,+1 555-010-2212,orion-converting.example,jars,BRCGS,
+Harborview Converting,Tulsa,OK,US,sales@harborview-converting.example,(555) 010-2213,harborview-converting.example,cans;rigid,,
+Meridian Converting,Fresno,CA,US,sales@meridian-converting.example,555.010.2214,meridian-converting.example,pet-bottles,,
+Lakeshore Converting,Sacramento,CA,US,sales@lakeshore-converting.example,+1 555-010-2215,lakeshore-converting.example,hdpe-bottles,,Family-owned lakeshore converter serving the Midwest.
+Vanguard Converting,Louisville,,US,,(555) 010-2216,vanguard-converting.example,flexible;rigid,FDA_REGISTRATION,
+Pinnacle Converting,Birmingham,AL,US,sales@pinnacle-converting.example,555.010.2217,pinnacle-converting.example,stand-up-pouches,,
+Bluegrass Converting,Richmond,VA,US,sales@bluegrass-converting.example,+1 555-010-2218,bluegrass-converting.example,spouted-pouches,,
+Copperfield Converting,Salt Lake City,UT,US,sales@copperfield-converting.example,(555) 010-2219,copperfield-converting.example,sachets;rigid,,
+Stonebridge Converting,Indianapolis,IN,US,sales@stonebridge-converting.example,555.010.2220,,films,ORGANIC,Family-owned stonebridge converter serving the Midwest.
+Fairwind Converting,Pittsburgh,PA,US,sales@fairwind-converting.example,+1 555-010-2221,fairwind-converting.example,roll-stock,,
+Northstar Converting,Cleveland,OH,US,,(555) 010-2222,northstar-converting.example,paperboard;rigid,,
+Redstone Converting,Minneapolis,MN,US,sales@redstone-converting.example,555.010.2223,redstone-converting.example,folding-cartons,,
+Silvercreek Converting,St. Louis,MO,US,sales@silvercreek-converting.example,+1 555-010-2224,silvercreek-converting.example,rigid-boxes,SQF,
+Trueline Converting,Hartford,,US,sales@trueline-converting.example,(555) 010-2225,trueline-converting.example,corrugated;rigid,,Family-owned trueline converter serving the Midwest.
+Waypoint Converting,Grand Rapids,MI,US,sales@waypoint-converting.example,555.010.2226,waypoint-converting.example,closures-caps,,
+Juniper Converting,Des Moines,IA,US,sales@juniper-converting.example,+1 555-010-2227,juniper-converting.example,labels-shrink-sleeves,,
+Cascadia Converting,Boise,ID,US,,(555) 010-2228,cascadia-converting.example,trays-clamshells;rigid,BRCGS,
+Dunmore Converting,Little Rock,AR,US,sales@dunmore-converting.example,555.010.2229,dunmore-converting.example,secondary-tertiary,,
+Elmwood Converting,Knoxville,TN,US,sales@elmwood-converting.example,+1 555-010-2230,elmwood-converting.example,sustainable-compostable,,Family-owned elmwood converter serving the Midwest.
+Foxfield Converting,Wichita,KS,US,sales@foxfield-converting.example,(555) 010-2231,,rigid,,
+Glenview Converting,Providence,RI,US,sales@glenview-converting.example,555.010.2232,glenview-converting.example,glass-bottles,FDA_REGISTRATION,
+Hartwell Converting,Buffalo,NY,US,sales@hartwell-converting.example,+1 555-010-2233,hartwell-converting.example,jars,,
+Ironwood Converting,Akron,,US,,(555) 010-2234,ironwood-converting.example,cans;rigid,,
+Kestrel Converting,Toledo,OH,US,sales@kestrel-converting.example,555.010.2235,kestrel-converting.example,pet-bottles,,Family-owned kestrel converter serving the Midwest.
+Longleaf Converting,Green Bay,WI,US,sales@longleaf-converting.example,+1 555-010-2236,longleaf-converting.example,hdpe-bottles,ORGANIC,
+Maplewood Converting,Chattanooga,TN,US,sales@maplewood-converting.example,(555) 010-2237,maplewood-converting.example,flexible;rigid,,
+Newbury Converting,Spokane,WA,US,sales@newbury-converting.example,555.010.2238,newbury-converting.example,stand-up-pouches,,
+Oakfield Converting,Albany,NY,US,sales@oakfield-converting.example,+1 555-010-2239,oakfield-converting.example,spouted-pouches,,
+Pinehurst Converting,Chicago,IL,US,,(555) 010-2240,pinehurst-converting.example,sachets;rigid,SQF,Family-owned pinehurst converter serving the Midwest.
+Quarryhill Converting,Dallas,TX,US,sales@quarryhill-converting.example,555.010.2241,quarryhill-converting.example,films,,
+Riverbend Converting,Atlanta,GA,US,sales@riverbend-converting.example,+1 555-010-2242,,roll-stock,,
+Sagebrush Converting,Denver,,US,sales@sagebrush-converting.example,(555) 010-2243,sagebrush-converting.example,paperboard;rigid,,
+Thornbury Converting,Portland,OR,US,sales@thornbury-converting.example,555.010.2244,thornbury-converting.example,folding-cartons,BRCGS,
+Ulster Converting,Nashville,TN,US,sales@ulster-converting.example,+1 555-010-2245,ulster-converting.example,rigid-boxes,,Family-owned ulster converter serving the Midwest.
+Vinebrook Converting,Charlotte,NC,US,,(555) 010-2246,vinebrook-converting.example,corrugated;rigid,,
+Westgate Converting,Columbus,OH,US,sales@westgate-converting.example,555.010.2247,westgate-converting.example,closures-caps,,
+Yarrow Converting,Phoenix,AZ,US,sales@yarrow-converting.example,+1 555-010-2248,yarrow-converting.example,labels-shrink-sleeves,FDA_REGISTRATION,
+Ashford Converting,Kansas City,MO,US,sales@ashford-converting.example,(555) 010-2249,ashford-converting.example,trays-clamshells;rigid,,
+Briarcliff Converting,Milwaukee,WI,US,sales@briarcliff-converting.example,555.010.2250,briarcliff-converting.example,secondary-tertiary,,Family-owned briarcliff converter serving the Midwest.
+Cedarville Converting,Raleigh,NC,US,sales@cedarville-converting.example,+1 555-010-2251,cedarville-converting.example,sustainable-compostable,,
+Dovercourt Converting,Omaha,,US,,(555) 010-2252,dovercourt-converting.example,rigid,ORGANIC,
+Eastbrook Converting,Tulsa,OK,US,sales@eastbrook-converting.example,555.010.2253,,glass-bottles,,
+Fernhill Converting,Fresno,CA,US,sales@fernhill-converting.example,+1 555-010-2254,fernhill-converting.example,jars,,
+Grandview Converting,Sacramento,CA,US,sales@grandview-converting.example,(555) 010-2255,grandview-converting.example,cans;rigid,,Family-owned grandview converter serving the Midwest.
+Holloway Converting,Louisville,KY,US,sales@holloway-converting.example,555.010.2256,holloway-converting.example,pet-bottles,SQF,
+Inglewood Converting,Birmingham,AL,US,sales@inglewood-converting.example,+1 555-010-2257,inglewood-converting.example,hdpe-bottles,,
+Jamestown Converting,Richmond,VA,US,,(555) 010-2258,jamestown-converting.example,flexible;rigid,,
+Kingsport Converting,Salt Lake City,UT,US,sales@kingsport-converting.example,555.010.2259,kingsport-converting.example,stand-up-pouches,,
+Larkspur Converting,Indianapolis,IN,US,sales@larkspur-converting.example,+1 555-010-2260,larkspur-converting.example,spouted-pouches,BRCGS,Family-owned larkspur converter serving the Midwest.
+Montclair Converting,Pittsburgh,,US,sales@montclair-converting.example,(555) 010-2261,montclair-converting.example,sachets;rigid,,
+Norwood Converting,Cleveland,OH,US,sales@norwood-converting.example,555.010.2262,norwood-converting.example,films,,
+Oakhurst Converting,Minneapolis,MN,US,sales@oakhurst-converting.example,+1 555-010-2263,oakhurst-converting.example,roll-stock,,
+Parkside Converting,St. Louis,MO,US,,(555) 010-2264,,paperboard;rigid,FDA_REGISTRATION,
+Quinby Converting,Hartford,CT,US,sales@quinby-converting.example,555.010.2265,quinby-converting.example,folding-cartons,,Family-owned quinby converter serving the Midwest.
+Ridgefield Converting,Grand Rapids,MI,US,sales@ridgefield-converting.example,+1 555-010-2266,ridgefield-converting.example,rigid-boxes,,
+Selma Converting,Des Moines,IA,US,sales@selma-converting.example,(555) 010-2267,selma-converting.example,corrugated;rigid,,
+Tiburon Converting,Boise,ID,US,sales@tiburon-converting.example,555.010.2268,tiburon-converting.example,closures-caps,ORGANIC,
+Upton Converting,Little Rock,AR,US,sales@upton-converting.example,+1 555-010-2269,upton-converting.example,labels-shrink-sleeves,,
+Valleymount Converting,Knoxville,,US,,(555) 010-2270,valleymount-converting.example,trays-clamshells;rigid,,Family-owned valleymount converter serving the Midwest.
+Wexford Converting,Wichita,KS,US,sales@wexford-converting.example,555.010.2271,wexford-converting.example,secondary-tertiary,,
+Yorkville Converting,Providence,RI,US,sales@yorkville-converting.example,+1 555-010-2272,yorkville-converting.example,sustainable-compostable,SQF,
+Zionsville Converting,Buffalo,NY,US,sales@zionsville-converting.example,(555) 010-2273,zionsville-converting.example,rigid,,
+Amberly Converting,Akron,OH,US,sales@amberly-converting.example,555.010.2274,amberly-converting.example,glass-bottles,,
+Bellhaven Converting,Toledo,OH,US,sales@bellhaven-converting.example,+1 555-010-2275,,jars,,Family-owned bellhaven converter serving the Midwest.
+Collinswood Converting,Green Bay,WI,US,,(555) 010-2276,collinswood-converting.example,cans;rigid,BRCGS,
+Drayton Converting,Chattanooga,TN,US,sales@drayton-converting.example,555.010.2277,drayton-converting.example,pet-bottles,,
+Ellsworth Converting,Spokane,WA,US,sales@ellsworth-converting.example,+1 555-010-2278,ellsworth-converting.example,hdpe-bottles,,
+Fenwick Converting,Albany,,US,sales@fenwick-converting.example,(555) 010-2279,fenwick-converting.example,flexible;rigid,,
+Summit Pack Corp.,Chicago,IL,US,sales@summit-pack.example,555.010.2280,summit-pack.example,stand-up-pouches,FDA_REGISTRATION,Family-owned summit converter serving the Midwest.
+Crestline Pack Corp.,Dallas,TX,US,sales@crestline-pack.example,+1 555-010-2281,crestline-pack.example,spouted-pouches,,
+Orion Pack Corp.,Atlanta,GA,US,,(555) 010-2282,orion-pack.example,sachets;rigid,,
+Harborview Pack Corp.,Denver,CO,US,sales@harborview-pack.example,555.010.2283,harborview-pack.example,films,,
+Meridian Pack Corp.,Portland,OR,US,sales@meridian-pack.example,+1 555-010-2284,meridian-pack.example,roll-stock,ORGANIC,
+Lakeshore Pack Corp.,Nashville,TN,US,sales@lakeshore-pack.example,(555) 010-2285,lakeshore-pack.example,paperboard;rigid,,Family-owned lakeshore converter serving the Midwest.
+Vanguard Pack Corp.,Charlotte,NC,US,sales@vanguard-pack.example,555.010.2286,,folding-cartons,,
+Pinnacle Pack Corp.,Columbus,OH,US,sales@pinnacle-pack.example,+1 555-010-2287,pinnacle-pack.example,rigid-boxes,,
+Bluegrass Pack Corp.,Phoenix,,US,,(555) 010-2288,bluegrass-pack.example,corrugated;rigid,SQF,
+Copperfield Pack Corp.,Kansas City,MO,US,sales@copperfield-pack.example,555.010.2289,copperfield-pack.example,closures-caps,,
+Stonebridge Pack Corp.,Milwaukee,WI,US,sales@stonebridge-pack.example,+1 555-010-2290,stonebridge-pack.example,labels-shrink-sleeves,,Family-owned stonebridge converter serving the Midwest.
+Fairwind Pack Corp.,Raleigh,NC,US,sales@fairwind-pack.example,(555) 010-2291,fairwind-pack.example,trays-clamshells;rigid,,
+Northstar Pack Corp.,Omaha,NE,US,sales@northstar-pack.example,555.010.2292,northstar-pack.example,secondary-tertiary,BRCGS,
+Redstone Pack Corp.,Tulsa,OK,US,sales@redstone-pack.example,+1 555-010-2293,redstone-pack.example,sustainable-compostable,,
+Silvercreek Pack Corp.,Fresno,CA,US,,(555) 010-2294,silvercreek-pack.example,rigid,,
+Trueline Pack Corp.,Sacramento,CA,US,sales@trueline-pack.example,555.010.2295,trueline-pack.example,glass-bottles,,Family-owned trueline converter serving the Midwest.
+Waypoint Pack Corp.,Louisville,KY,US,sales@waypoint-pack.example,+1 555-010-2296,waypoint-pack.example,jars,FDA_REGISTRATION,
+Juniper Pack Corp.,Birmingham,,US,sales@juniper-pack.example,(555) 010-2297,,cans;rigid,,
+Cascadia Pack Corp.,Richmond,VA,US,sales@cascadia-pack.example,555.010.2298,cascadia-pack.example,pet-bottles,,
+Dunmore Pack Corp.,Salt Lake City,UT,US,sales@dunmore-pack.example,+1 555-010-2299,dunmore-pack.example,hdpe-bottles,,
+Elmwood Pack Corp.,Indianapolis,IN,US,,(555) 010-2300,elmwood-pack.example,flexible;rigid,ORGANIC,Family-owned elmwood converter serving the Midwest.
+Foxfield Pack Corp.,Pittsburgh,PA,US,sales@foxfield-pack.example,555.010.2301,foxfield-pack.example,stand-up-pouches,,
+Glenview Pack Corp.,Cleveland,OH,US,sales@glenview-pack.example,+1 555-010-2302,glenview-pack.example,spouted-pouches,,
+Hartwell Pack Corp.,Minneapolis,MN,US,sales@hartwell-pack.example,(555) 010-2303,hartwell-pack.example,sachets;rigid,,
+Ironwood Pack Corp.,St. Louis,MO,US,sales@ironwood-pack.example,555.010.2304,ironwood-pack.example,films,SQF,
+Kestrel Pack Corp.,Hartford,CT,US,sales@kestrel-pack.example,+1 555-010-2305,kestrel-pack.example,roll-stock,,Family-owned kestrel converter serving the Midwest.
+Longleaf Pack Corp.,Grand Rapids,,US,,(555) 010-2306,longleaf-pack.example,paperboard;rigid,,
+Maplewood Pack Corp.,Des Moines,IA,US,sales@maplewood-pack.example,555.010.2307,maplewood-pack.example,folding-cartons,,
+Newbury Pack Corp.,Boise,ID,US,sales@newbury-pack.example,+1 555-010-2308,,rigid-boxes,BRCGS,
+Oakfield Pack Corp.,Little Rock,AR,US,sales@oakfield-pack.example,(555) 010-2309,oakfield-pack.example,corrugated;rigid,,
+Pinehurst Pack Corp.,Knoxville,TN,US,sales@pinehurst-pack.example,555.010.2310,pinehurst-pack.example,closures-caps,,Family-owned pinehurst converter serving the Midwest.
+Quarryhill Pack Corp.,Wichita,KS,US,sales@quarryhill-pack.example,+1 555-010-2311,quarryhill-pack.example,labels-shrink-sleeves,,
+Riverbend Pack Corp.,Providence,RI,US,,(555) 010-2312,riverbend-pack.example,trays-clamshells;rigid,FDA_REGISTRATION,
+Sagebrush Pack Corp.,Buffalo,NY,US,sales@sagebrush-pack.example,555.010.2313,sagebrush-pack.example,secondary-tertiary,,
+Thornbury Pack Corp.,Akron,OH,US,sales@thornbury-pack.example,+1 555-010-2314,thornbury-pack.example,sustainable-compostable,,
+Ulster Pack Corp.,Toledo,,US,sales@ulster-pack.example,(555) 010-2315,ulster-pack.example,rigid,,Family-owned ulster converter serving the Midwest.
+Vinebrook Pack Corp.,Green Bay,WI,US,sales@vinebrook-pack.example,555.010.2316,vinebrook-pack.example,glass-bottles,ORGANIC,
+Westgate Pack Corp.,Chattanooga,TN,US,sales@westgate-pack.example,+1 555-010-2317,westgate-pack.example,jars,,
+Yarrow Pack Corp.,Spokane,WA,US,,(555) 010-2318,yarrow-pack.example,cans;rigid,,
+Ashford Pack Corp.,Albany,NY,US,sales@ashford-pack.example,555.010.2319,,pet-bottles,,
+Briarcliff Pack Corp.,Chicago,IL,US,sales@briarcliff-pack.example,+1 555-010-2320,briarcliff-pack.example,hdpe-bottles,SQF,Family-owned briarcliff converter serving the Midwest.
+Cedarville Pack Corp.,Dallas,TX,US,sales@cedarville-pack.example,(555) 010-2321,cedarville-pack.example,flexible;rigid,,
+Dovercourt Pack Corp.,Atlanta,GA,US,sales@dovercourt-pack.example,555.010.2322,dovercourt-pack.example,stand-up-pouches,,
+Eastbrook Pack Corp.,Denver,CO,US,sales@eastbrook-pack.example,+1 555-010-2323,eastbrook-pack.example,spouted-pouches,,
+Fernhill Pack Corp.,Portland,,US,,(555) 010-2324,fernhill-pack.example,sachets;rigid,BRCGS,
+Grandview Pack Corp.,Nashville,TN,US,sales@grandview-pack.example,555.010.2325,grandview-pack.example,films,,Family-owned grandview converter serving the Midwest.
+Holloway Pack Corp.,Charlotte,NC,US,sales@holloway-pack.example,+1 555-010-2326,holloway-pack.example,roll-stock,,
+Inglewood Pack Corp.,Columbus,OH,US,sales@inglewood-pack.example,(555) 010-2327,inglewood-pack.example,paperboard;rigid,,
+Jamestown Pack Corp.,Phoenix,AZ,US,sales@jamestown-pack.example,555.010.2328,jamestown-pack.example,folding-cartons,FDA_REGISTRATION,
+Kingsport Pack Corp.,Kansas City,MO,US,sales@kingsport-pack.example,+1 555-010-2329,kingsport-pack.example,rigid-boxes,,
+Larkspur Pack Corp.,Milwaukee,WI,US,,(555) 010-2330,,corrugated;rigid,,Family-owned larkspur converter serving the Midwest.
+Montclair Pack Corp.,Raleigh,NC,US,sales@montclair-pack.example,555.010.2331,montclair-pack.example,closures-caps,,
+Norwood Pack Corp.,Omaha,NE,US,sales@norwood-pack.example,+1 555-010-2332,norwood-pack.example,labels-shrink-sleeves,ORGANIC,
+Oakhurst Pack Corp.,Tulsa,,US,sales@oakhurst-pack.example,(555) 010-2333,oakhurst-pack.example,trays-clamshells;rigid,,
+Parkside Pack Corp.,Fresno,CA,US,sales@parkside-pack.example,555.010.2334,parkside-pack.example,secondary-tertiary,,
+Quinby Pack Corp.,Sacramento,CA,US,sales@quinby-pack.example,+1 555-010-2335,quinby-pack.example,sustainable-compostable,,Family-owned quinby converter serving the Midwest.
+Ridgefield Pack Corp.,Louisville,KY,US,,(555) 010-2336,ridgefield-pack.example,rigid,SQF,
+Selma Pack Corp.,Birmingham,AL,US,sales@selma-pack.example,555.010.2337,selma-pack.example,glass-bottles,,
+Tiburon Pack Corp.,Richmond,VA,US,sales@tiburon-pack.example,+1 555-010-2338,tiburon-pack.example,jars,,
+Upton Pack Corp.,Salt Lake City,UT,US,sales@upton-pack.example,(555) 010-2339,upton-pack.example,cans;rigid,,
+Valleymount Pack Corp.,Indianapolis,IN,US,sales@valleymount-pack.example,555.010.2340,valleymount-pack.example,pet-bottles,BRCGS,Family-owned valleymount converter serving the Midwest.
+Wexford Pack Corp.,Pittsburgh,PA,US,sales@wexford-pack.example,+1 555-010-2341,,hdpe-bottles,,
+Yorkville Pack Corp.,Cleveland,,US,,(555) 010-2342,yorkville-pack.example,flexible;rigid,,
+Zionsville Pack Corp.,Minneapolis,MN,US,sales@zionsville-pack.example,555.010.2343,zionsville-pack.example,stand-up-pouches,,
+Amberly Pack Corp.,St. Louis,MO,US,sales@amberly-pack.example,+1 555-010-2344,amberly-pack.example,spouted-pouches,FDA_REGISTRATION,
+Bellhaven Pack Corp.,Hartford,CT,US,sales@bellhaven-pack.example,(555) 010-2345,bellhaven-pack.example,sachets;rigid,,Family-owned bellhaven converter serving the Midwest.
+Collinswood Pack Corp.,Grand Rapids,MI,US,sales@collinswood-pack.example,555.010.2346,collinswood-pack.example,films,,
+Drayton Pack Corp.,Des Moines,IA,US,sales@drayton-pack.example,+1 555-010-2347,drayton-pack.example,roll-stock,,
+Ellsworth Pack Corp.,Boise,ID,US,,(555) 010-2348,ellsworth-pack.example,paperboard;rigid,ORGANIC,
+Fenwick Pack Corp.,Little Rock,AR,US,sales@fenwick-pack.example,555.010.2349,fenwick-pack.example,folding-cartons,,
+Summit Group,Knoxville,TN,US,sales@summit-group.example,+1 555-010-2350,summit-group.example,rigid-boxes,,Family-owned summit converter serving the Midwest.
+Crestline Group,Wichita,,US,sales@crestline-group.example,(555) 010-2351,crestline-group.example,corrugated;rigid,,
+Orion Group,Providence,RI,US,sales@orion-group.example,555.010.2352,,closures-caps,SQF,
+Harborview Group,Buffalo,NY,US,sales@harborview-group.example,+1 555-010-2353,harborview-group.example,labels-shrink-sleeves,,
+Meridian Group,Akron,OH,US,,(555) 010-2354,meridian-group.example,trays-clamshells;rigid,,
+Lakeshore Group,Toledo,OH,US,sales@lakeshore-group.example,555.010.2355,lakeshore-group.example,secondary-tertiary,,Family-owned lakeshore converter serving the Midwest.
+Vanguard Group,Green Bay,WI,US,sales@vanguard-group.example,+1 555-010-2356,vanguard-group.example,sustainable-compostable,BRCGS,
+Pinnacle Group,Chattanooga,TN,US,sales@pinnacle-group.example,(555) 010-2357,pinnacle-group.example,rigid,,
+Bluegrass Group,Spokane,WA,US,sales@bluegrass-group.example,555.010.2358,bluegrass-group.example,glass-bottles,,
+Copperfield Group,Albany,NY,US,sales@copperfield-group.example,+1 555-010-2359,copperfield-group.example,jars,,
+Stonebridge Group,Chicago,,US,,(555) 010-2360,stonebridge-group.example,cans;rigid,FDA_REGISTRATION,Family-owned stonebridge converter serving the Midwest.
+Fairwind Group,Dallas,TX,US,sales@fairwind-group.example,555.010.2361,fairwind-group.example,pet-bottles,,
+Northstar Group,Atlanta,GA,US,sales@northstar-group.example,+1 555-010-2362,northstar-group.example,hdpe-bottles,,
+Redstone Group,Denver,CO,US,sales@redstone-group.example,(555) 010-2363,,flexible;rigid,,
+Silvercreek Group,Portland,OR,US,sales@silvercreek-group.example,555.010.2364,silvercreek-group.example,stand-up-pouches,ORGANIC,
+Trueline Group,Nashville,TN,US,sales@trueline-group.example,+1 555-010-2365,trueline-group.example,spouted-pouches,,Family-owned trueline converter serving the Midwest.
+Waypoint Group,Charlotte,NC,US,,(555) 010-2366,waypoint-group.example,sachets;rigid,,
+Juniper Group,Columbus,OH,US,sales@juniper-group.example,555.010.2367,juniper-group.example,films,,
+Cascadia Group,Phoenix,AZ,US,sales@cascadia-group.example,+1 555-010-2368,cascadia-group.example,roll-stock,SQF,
+Dunmore Group,Kansas City,,US,sales@dunmore-group.example,(555) 010-2369,dunmore-group.example,paperboard;rigid,,
+Elmwood Group,Milwaukee,WI,US,sales@elmwood-group.example,555.010.2370,elmwood-group.example,folding-cartons,,Family-owned elmwood converter serving the Midwest.
+Foxfield Group,Raleigh,NC,US,sales@foxfield-group.example,+1 555-010-2371,foxfield-group.example,rigid-boxes,,
+Glenview Group,Omaha,NE,US,,(555) 010-2372,glenview-group.example,corrugated;rigid,BRCGS,
+Hartwell Group,Tulsa,OK,US,sales@hartwell-group.example,555.010.2373,hartwell-group.example,closures-caps,,
+Ironwood Group,Fresno,CA,US,sales@ironwood-group.example,+1 555-010-2374,,labels-shrink-sleeves,,
+Kestrel Group,Sacramento,CA,US,sales@kestrel-group.example,(555) 010-2375,kestrel-group.example,trays-clamshells;rigid,,Family-owned kestrel converter serving the Midwest.
+Longleaf Group,Louisville,KY,US,sales@longleaf-group.example,555.010.2376,longleaf-group.example,secondary-tertiary,FDA_REGISTRATION,
+Maplewood Group,Birmingham,AL,US,sales@maplewood-group.example,+1 555-010-2377,maplewood-group.example,sustainable-compostable,,
+Newbury Group,Richmond,,US,,(555) 010-2378,newbury-group.example,rigid,,
+Oakfield Group,Salt Lake City,UT,US,sales@oakfield-group.example,555.010.2379,oakfield-group.example,glass-bottles,,
+Pinehurst Group,Indianapolis,IN,US,sales@pinehurst-group.example,+1 555-010-2380,pinehurst-group.example,jars,ORGANIC,Family-owned pinehurst converter serving the Midwest.
+Quarryhill Group,Pittsburgh,PA,US,sales@quarryhill-group.example,(555) 010-2381,quarryhill-group.example,cans;rigid,,
+Riverbend Group,Cleveland,OH,US,sales@riverbend-group.example,555.010.2382,riverbend-group.example,pet-bottles,,
+Sagebrush Group,Minneapolis,MN,US,sales@sagebrush-group.example,+1 555-010-2383,sagebrush-group.example,hdpe-bottles,,
+Thornbury Group,St. Louis,MO,US,,(555) 010-2384,thornbury-group.example,flexible;rigid,SQF,
+Ulster Group,Hartford,CT,US,sales@ulster-group.example,555.010.2385,,stand-up-pouches,,Family-owned ulster converter serving the Midwest.
+Vinebrook Group,Grand Rapids,MI,US,sales@vinebrook-group.example,+1 555-010-2386,vinebrook-group.example,spouted-pouches,,
+Westgate Group,Des Moines,,US,sales@westgate-group.example,(555) 010-2387,westgate-group.example,sachets;rigid,,
+Yarrow Group,Boise,ID,US,sales@yarrow-group.example,555.010.2388,yarrow-group.example,films,BRCGS,
+Ashford Group,Little Rock,AR,US,sales@ashford-group.example,+1 555-010-2389,ashford-group.example,roll-stock,,
+Briarcliff Group,Knoxville,TN,US,,(555) 010-2390,briarcliff-group.example,paperboard;rigid,,Family-owned briarcliff converter serving the Midwest.
+Cedarville Group,Wichita,KS,US,sales@cedarville-group.example,555.010.2391,cedarville-group.example,folding-cartons,,
+Dovercourt Group,Providence,RI,US,sales@dovercourt-group.example,+1 555-010-2392,dovercourt-group.example,rigid-boxes,FDA_REGISTRATION,
+Eastbrook Group,Buffalo,NY,US,sales@eastbrook-group.example,(555) 010-2393,eastbrook-group.example,corrugated;rigid,,
+Fernhill Group,Akron,OH,US,sales@fernhill-group.example,555.010.2394,fernhill-group.example,closures-caps,,
+Grandview Group,Toledo,OH,US,sales@grandview-group.example,+1 555-010-2395,grandview-group.example,labels-shrink-sleeves,,Family-owned grandview converter serving the Midwest.
+Holloway Group,Green Bay,,US,,(555) 010-2396,,trays-clamshells;rigid,ORGANIC,
+Inglewood Group,Chattanooga,TN,US,sales@inglewood-group.example,555.010.2397,inglewood-group.example,secondary-tertiary,,
+Jamestown Group,Spokane,WA,US,sales@jamestown-group.example,+1 555-010-2398,jamestown-group.example,sustainable-compostable,,
+Kingsport Group,Albany,NY,US,sales@kingsport-group.example,(555) 010-2399,kingsport-group.example,rigid,,
+Larkspur Group,Chicago,IL,US,sales@larkspur-group.example,555.010.2400,larkspur-group.example,glass-bottles,SQF,Family-owned larkspur converter serving the Midwest.
+Montclair Group,Dallas,TX,US,sales@montclair-group.example,+1 555-010-2401,montclair-group.example,jars,,
+Norwood Group,Atlanta,GA,US,,(555) 010-2402,norwood-group.example,cans;rigid,,
+Oakhurst Group,Denver,CO,US,sales@oakhurst-group.example,555.010.2403,oakhurst-group.example,pet-bottles,,
+Parkside Group,Portland,OR,US,sales@parkside-group.example,+1 555-010-2404,parkside-group.example,hdpe-bottles,BRCGS,
+Quinby Group,Nashville,,US,sales@quinby-group.example,(555) 010-2405,quinby-group.example,flexible;rigid,,Family-owned quinby converter serving the Midwest.
+Ridgefield Group,Charlotte,NC,US,sales@ridgefield-group.example,555.010.2406,ridgefield-group.example,stand-up-pouches,,
+Selma Group,Columbus,OH,US,sales@selma-group.example,+1 555-010-2407,,spouted-pouches,,
+Tiburon Group,Phoenix,AZ,US,,(555) 010-2408,tiburon-group.example,sachets;rigid,FDA_REGISTRATION,
+Upton Group,Kansas City,MO,US,sales@upton-group.example,555.010.2409,upton-group.example,films,,
+Valleymount Group,Milwaukee,WI,US,sales@valleymount-group.example,+1 555-010-2410,valleymount-group.example,roll-stock,,Family-owned valleymount converter serving the Midwest.
+Wexford Group,Raleigh,NC,US,sales@wexford-group.example,(555) 010-2411,wexford-group.example,paperboard;rigid,,
+Yorkville Group,Omaha,NE,US,sales@yorkville-group.example,555.010.2412,yorkville-group.example,folding-cartons,ORGANIC,
+Zionsville Group,Tulsa,OK,US,sales@zionsville-group.example,+1 555-010-2413,zionsville-group.example,rigid-boxes,,
+Amberly Group,Fresno,,US,,(555) 010-2414,amberly-group.example,corrugated;rigid,,
+Bellhaven Group,Sacramento,CA,US,sales@bellhaven-group.example,555.010.2415,bellhaven-group.example,closures-caps,,Family-owned bellhaven converter serving the Midwest.
+Collinswood Group,Louisville,KY,US,sales@collinswood-group.example,+1 555-010-2416,collinswood-group.example,labels-shrink-sleeves,SQF,
+Drayton Group,Birmingham,AL,US,sales@drayton-group.example,(555) 010-2417,drayton-group.example,trays-clamshells;rigid,,
+Ellsworth Group,Richmond,VA,US,sales@ellsworth-group.example,555.010.2418,,secondary-tertiary,,
+Fenwick Group,Salt Lake City,UT,US,sales@fenwick-group.example,+1 555-010-2419,fenwick-group.example,sustainable-compostable,,
+Summit Solutions,Indianapolis,IN,US,,(555) 010-2420,summit-solutions.example,rigid,BRCGS,Family-owned summit converter serving the Midwest.
+Crestline Solutions,Pittsburgh,PA,US,sales@crestline-solutions.example,555.010.2421,crestline-solutions.example,glass-bottles,,
+Orion Solutions,Cleveland,OH,US,sales@orion-solutions.example,+1 555-010-2422,orion-solutions.example,jars,,
+Harborview Solutions,Minneapolis,,US,sales@harborview-solutions.example,(555) 010-2423,harborview-solutions.example,cans;rigid,,
+Meridian Solutions,St. Louis,MO,US,sales@meridian-solutions.example,555.010.2424,meridian-solutions.example,pet-bottles,FDA_REGISTRATION,
+Lakeshore Solutions,Hartford,CT,US,sales@lakeshore-solutions.example,+1 555-010-2425,lakeshore-solutions.example,hdpe-bottles,,Family-owned lakeshore converter serving the Midwest.
+Vanguard Solutions,Grand Rapids,MI,US,,(555) 010-2426,vanguard-solutions.example,flexible;rigid,,
+Pinnacle Solutions,Des Moines,IA,US,sales@pinnacle-solutions.example,555.010.2427,pinnacle-solutions.example,stand-up-pouches,,
+Bluegrass Solutions,Boise,ID,US,sales@bluegrass-solutions.example,+1 555-010-2428,bluegrass-solutions.example,spouted-pouches,ORGANIC,
+Copperfield Solutions,Little Rock,AR,US,sales@copperfield-solutions.example,(555) 010-2429,,sachets;rigid,,
+Stonebridge Solutions,Knoxville,TN,US,sales@stonebridge-solutions.example,555.010.2430,stonebridge-solutions.example,films,,Family-owned stonebridge converter serving the Midwest.
+Fairwind Solutions,Wichita,KS,US,sales@fairwind-solutions.example,+1 555-010-2431,fairwind-solutions.example,roll-stock,,
+Northstar Solutions,Providence,,US,,(555) 010-2432,northstar-solutions.example,paperboard;rigid,SQF,
+Redstone Solutions,Buffalo,NY,US,sales@redstone-solutions.example,555.010.2433,redstone-solutions.example,folding-cartons,,
+Silvercreek Solutions,Akron,OH,US,sales@silvercreek-solutions.example,+1 555-010-2434,silvercreek-solutions.example,rigid-boxes,,
+Trueline Solutions,Toledo,OH,US,sales@trueline-solutions.example,(555) 010-2435,trueline-solutions.example,corrugated;rigid,,Family-owned trueline converter serving the Midwest.
+Waypoint Solutions,Green Bay,WI,US,sales@waypoint-solutions.example,555.010.2436,waypoint-solutions.example,closures-caps,BRCGS,
+Juniper Solutions,Chattanooga,TN,US,sales@juniper-solutions.example,+1 555-010-2437,juniper-solutions.example,labels-shrink-sleeves,,
+Cascadia Solutions,Spokane,WA,US,,(555) 010-2438,cascadia-solutions.example,trays-clamshells;rigid,,
+Dunmore Solutions,Albany,NY,US,sales@dunmore-solutions.example,555.010.2439,dunmore-solutions.example,secondary-tertiary,,
+Elmwood Solutions,Chicago,IL,US,sales@elmwood-solutions.example,+1 555-010-2440,,sustainable-compostable,FDA_REGISTRATION,Family-owned elmwood converter serving the Midwest.
+Foxfield Solutions,Dallas,,US,sales@foxfield-solutions.example,(555) 010-2441,foxfield-solutions.example,rigid,,
+Glenview Solutions,Atlanta,GA,US,sales@glenview-solutions.example,555.010.2442,glenview-solutions.example,glass-bottles,,
+Hartwell Solutions,Denver,CO,US,sales@hartwell-solutions.example,+1 555-010-2443,hartwell-solutions.example,jars,,
+Ironwood Solutions,Portland,OR,US,,(555) 010-2444,ironwood-solutions.example,cans;rigid,ORGANIC,
+Kestrel Solutions,Nashville,TN,US,sales@kestrel-solutions.example,555.010.2445,kestrel-solutions.example,pet-bottles,,Family-owned kestrel converter serving the Midwest.
+Longleaf Solutions,Charlotte,NC,US,sales@longleaf-solutions.example,+1 555-010-2446,longleaf-solutions.example,hdpe-bottles,,
+Maplewood Solutions,Columbus,OH,US,sales@maplewood-solutions.example,(555) 010-2447,maplewood-solutions.example,flexible;rigid,,
+Newbury Solutions,Phoenix,AZ,US,sales@newbury-solutions.example,555.010.2448,newbury-solutions.example,stand-up-pouches,SQF,
+Oakfield Solutions,Kansas City,MO,US,sales@oakfield-solutions.example,+1 555-010-2449,oakfield-solutions.example,spouted-pouches,,
+Pinehurst Solutions,Milwaukee,,US,,(555) 010-2450,pinehurst-solutions.example,sachets;rigid,,Family-owned pinehurst converter serving the Midwest.
+Quarryhill Solutions,Raleigh,NC,US,sales@quarryhill-solutions.example,555.010.2451,,films,,
+Riverbend Solutions,Omaha,NE,US,sales@riverbend-solutions.example,+1 555-010-2452,riverbend-solutions.example,roll-stock,BRCGS,
+Sagebrush Solutions,Tulsa,OK,US,sales@sagebrush-solutions.example,(555) 010-2453,sagebrush-solutions.example,paperboard;rigid,,
+Thornbury Solutions,Fresno,CA,US,sales@thornbury-solutions.example,555.010.2454,thornbury-solutions.example,folding-cartons,,
+Ulster Solutions,Sacramento,CA,US,sales@ulster-solutions.example,+1 555-010-2455,ulster-solutions.example,rigid-boxes,,Family-owned ulster converter serving the Midwest.
+Vinebrook Solutions,Louisville,KY,US,,(555) 010-2456,vinebrook-solutions.example,corrugated;rigid,FDA_REGISTRATION,
+Westgate Solutions,Birmingham,AL,US,sales@westgate-solutions.example,555.010.2457,westgate-solutions.example,closures-caps,,
+Yarrow Solutions,Richmond,VA,US,sales@yarrow-solutions.example,+1 555-010-2458,yarrow-solutions.example,labels-shrink-sleeves,,
+Ashford Solutions,Salt Lake City,,US,sales@ashford-solutions.example,(555) 010-2459,ashford-solutions.example,trays-clamshells;rigid,,
+Briarcliff Solutions,Indianapolis,IN,US,sales@briarcliff-solutions.example,555.010.2460,briarcliff-solutions.example,secondary-tertiary,ORGANIC,Family-owned briarcliff converter serving the Midwest.
+Cedarville Solutions,Pittsburgh,PA,US,sales@cedarville-solutions.example,+1 555-010-2461,cedarville-solutions.example,sustainable-compostable,,
+Dovercourt Solutions,Cleveland,OH,US,,(555) 010-2462,,rigid,,
+Eastbrook Solutions,Minneapolis,MN,US,sales@eastbrook-solutions.example,555.010.2463,eastbrook-solutions.example,glass-bottles,,
+Fernhill Solutions,St. Louis,MO,US,sales@fernhill-solutions.example,+1 555-010-2464,fernhill-solutions.example,jars,SQF,
+Grandview Solutions,Hartford,CT,US,sales@grandview-solutions.example,(555) 010-2465,grandview-solutions.example,cans;rigid,,Family-owned grandview converter serving the Midwest.
+Holloway Solutions,Grand Rapids,MI,US,sales@holloway-solutions.example,555.010.2466,holloway-solutions.example,pet-bottles,,
+Inglewood Solutions,Des Moines,IA,US,sales@inglewood-solutions.example,+1 555-010-2467,inglewood-solutions.example,hdpe-bottles,,
+Jamestown Solutions,Boise,,US,,(555) 010-2468,jamestown-solutions.example,flexible;rigid,BRCGS,
+Kingsport Solutions,Little Rock,AR,US,sales@kingsport-solutions.example,555.010.2469,kingsport-solutions.example,stand-up-pouches,,
+Larkspur Solutions,Knoxville,TN,US,sales@larkspur-solutions.example,+1 555-010-2470,larkspur-solutions.example,spouted-pouches,,Family-owned larkspur converter serving the Midwest.
+Montclair Solutions,Wichita,KS,US,sales@montclair-solutions.example,(555) 010-2471,montclair-solutions.example,sachets;rigid,,
+Norwood Solutions,Providence,RI,US,sales@norwood-solutions.example,555.010.2472,norwood-solutions.example,films,FDA_REGISTRATION,
+Oakhurst Solutions,Buffalo,NY,US,sales@oakhurst-solutions.example,+1 555-010-2473,,roll-stock,,
+Parkside Solutions,Akron,OH,US,,(555) 010-2474,parkside-solutions.example,paperboard;rigid,,
+Quinby Solutions,Toledo,OH,US,sales@quinby-solutions.example,555.010.2475,quinby-solutions.example,folding-cartons,,Family-owned quinby converter serving the Midwest.
+Ridgefield Solutions,Green Bay,WI,US,sales@ridgefield-solutions.example,+1 555-010-2476,ridgefield-solutions.example,rigid-boxes,ORGANIC,
+Selma Solutions,Chattanooga,,US,sales@selma-solutions.example,(555) 010-2477,selma-solutions.example,corrugated;rigid,,
+Tiburon Solutions,Spokane,WA,US,sales@tiburon-solutions.example,555.010.2478,tiburon-solutions.example,closures-caps,,
+Upton Solutions,Albany,NY,US,sales@upton-solutions.example,+1 555-010-2479,upton-solutions.example,labels-shrink-sleeves,,
+Valleymount Solutions,Chicago,IL,US,,(555) 010-2480,valleymount-solutions.example,trays-clamshells;rigid,SQF,Family-owned valleymount converter serving the Midwest.
+Wexford Solutions,Dallas,TX,US,sales@wexford-solutions.example,555.010.2481,wexford-solutions.example,secondary-tertiary,,
+Yorkville Solutions,Atlanta,GA,US,sales@yorkville-solutions.example,+1 555-010-2482,yorkville-solutions.example,sustainable-compostable,,
+Zionsville Solutions,Denver,CO,US,sales@zionsville-solutions.example,(555) 010-2483,zionsville-solutions.example,rigid,,
+Amberly Solutions,Portland,OR,US,sales@amberly-solutions.example,555.010.2484,,glass-bottles,BRCGS,
+Bellhaven Solutions,Nashville,TN,US,sales@bellhaven-solutions.example,+1 555-010-2485,bellhaven-solutions.example,jars,,Family-owned bellhaven converter serving the Midwest.
+Collinswood Solutions,Charlotte,,US,,(555) 010-2486,collinswood-solutions.example,cans;rigid,,
+Drayton Solutions,Columbus,OH,US,sales@drayton-solutions.example,555.010.2487,drayton-solutions.example,pet-bottles,,
+Ellsworth Solutions,Phoenix,AZ,US,sales@ellsworth-solutions.example,+1 555-010-2488,ellsworth-solutions.example,hdpe-bottles,FDA_REGISTRATION,
+Fenwick Solutions,Kansas City,MO,US,sales@fenwick-solutions.example,(555) 010-2489,fenwick-solutions.example,flexible;rigid,,
+Summit Packaging Inc.,Chicago,,US,sales@example.invalid,(555) 010-2000,,,,
+Vanguard Packaging Co.,Charlotte,NC,US,sales@vanguard-packaging.example,(555) 010-2006,www.vanguard-packaging.example,,,
+PINEHURST PACKAGING,KNOXVILLE,TN,US,sales@pinehurst-packaging.example,(555) 010-2030,pinehurst-packaging.example,,,
+Valleymount Packaging LLC.,Indianapolis,IN,US,sales@valleymount-packaging.example,(555) 010-2060,valleymount-packaging.example,,,
+Elmwood Container Co. Inc.,Milwaukee,,US,sales@elmwood-container.example,(555) 010-2090,elmwood-container.example,,,
+Larkspur Container Co. Co.,Chicago,IL,US,sales@larkspur-container.example,(555) 010-2120,www.larkspur-container.example,,,
+STONEBRIDGE PLASTICS,KNOXVILLE,TN,US,sales@stonebridge-plastics.example,(555) 010-2150,stonebridge-plastics.example,,,
+Briarcliff Plastics LLC.,Indianapolis,,US,sales@briarcliff-plastics.example,(555) 010-2180,briarcliff-plastics.example,,,
+Summit Converting Inc.,Milwaukee,WI,US,sales@summit-converting.example,(555) 010-2210,summit-converting.example,,,
+Pinehurst Converting Co.,Chicago,IL,US,sales@pinehurst-converting.example,(555) 010-2240,www.pinehurst-converting.example,,,

@@ -18,4 +18,19 @@ export function databaseUrl(): string {
 export * from "./taxonomy/types";
 export * from "./taxonomy/categories";
 export * from "./attribute-validation";
+export * from "./importer/column-contract";
+export * from "./importer/normalize";
+export * from "./importer/similarity";
+export * from "./importer/parse-csv";
+export * from "./importer/dedup";
+export * from "./importer/read-rows";
+export * from "./importer/merge-report";
+export * from "./importer/types";
+export * from "./importer/importer";
+export * from "./seed/rng";
+export * from "./seed/attributes";
+// seed/images and seed/seed stay unexported: they pull @resvg/resvg-js's
+// native binary and node builtins, which break the web app's webpack build.
+export * from "./seed/names";
+export * from "./seed/demo";
 export * from "./client";

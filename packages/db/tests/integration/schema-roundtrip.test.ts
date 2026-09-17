@@ -54,6 +54,12 @@ beforeAll(() => {
 });
 
 afterAll(async () => {
+  // Leave the shared CI database clean for later suites: this file writes
+  // plain (non-seed-prefixed) rows whose unique fields (e.g. the "rigid"
+  // category slug) would collide with the seed suite's taxonomy insert.
+  await prisma.$executeRawUnsafe(
+    `TRUNCATE TABLE "Organization", "User", "Category", "PriceBenchmark" CASCADE`,
+  );
   await prisma.$disconnect();
 });
 
