@@ -404,6 +404,9 @@ model User {
   emailVerified DateTime?
   name          String?
   image         String?
+  // Credentials provider (Auth.js). Null for magic-link-only accounts —
+  // scrypt hash in `scrypt$N$salt$hash` form; never a plaintext password.
+  passwordHash  String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?

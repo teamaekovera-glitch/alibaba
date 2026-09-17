@@ -9,7 +9,11 @@
       "cache": false,
       "persistent": true
     },
-    "typecheck": {},
+    "typecheck": {
+      // Upstream typechecks first — @packsource/core resolves the generated
+      // Prisma client types through @packsource/db.
+      "dependsOn": ["^typecheck"]
+    },
     "test": {},
     "test:integration": {}
   }

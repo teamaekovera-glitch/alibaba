@@ -16,3 +16,7 @@ next-env.d.ts
 coverage
 .eslintcache
 .DS_Store
+
+# playwright
+test-results
+playwright-report
