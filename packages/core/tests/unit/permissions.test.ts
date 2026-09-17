@@ -8,6 +8,7 @@ import {
   permissionsFor,
   roleSide,
 } from "../../src/permissions";
+import type { Role } from "../../src/permissions";
 
 /**
  * The role × action matrix from the spec ("Multi-tenancy and roles"),
@@ -15,7 +16,7 @@ import {
  * PERMISSION_MATRIX, so the test pins the intended grants rather than
  * rubber-stamping whatever the constant says.
  */
-const EXPECTED_GRANTS: Record<string, string[]> = {
+const EXPECTED_GRANTS: Record<Role, string[]> = {
   // Buyer orgs — OWNER/ADMIN run the workspace; BUYER sources and orders;
   // APPROVER gates orders over spend limits but does not source.
   OWNER: [
