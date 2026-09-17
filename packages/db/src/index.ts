@@ -18,3 +18,4 @@ export function databaseUrl(): string {
 export * from "./taxonomy/types";
 export * from "./taxonomy/categories";
 export * from "./attribute-validation";
+export * from "./client";
