@@ -2,7 +2,7 @@ import NextAuth, { type DefaultSession, type NextAuthConfig, type Session } from
 import type { JWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
 import { db } from "@/lib/db";
-import { authSecret, verifyMagicToken } from "@/lib/magic-link";
+import { verifyMagicToken } from "@/lib/magic-link";
 import { verifyPassword } from "@/lib/password";
 
 /**
@@ -18,7 +18,10 @@ import { verifyPassword } from "@/lib/password";
  */
 
 export const authConfig = {
-  secret: authSecret(),
+  // Passed through, not resolved eagerly: `next build` evaluates this module
+  // with NODE_ENV=production and no secrets, and Auth.js enforces the secret
+  // at request time (the right failure point for missing deployment config).
+  secret: process.env.AUTH_SECRET,
   trustHost: true,
   providers: [
     Credentials({

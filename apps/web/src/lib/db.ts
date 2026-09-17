@@ -1,18 +1,5 @@
 import { PrismaClient } from "@packsource/db";
 
-/**
- * One PrismaClient per process — Next.js hot reloads would otherwise open a
- * connection pool per module evaluation.
- */
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
-
-export const db: PrismaClient =
-  globalForPrisma.prisma ?? new PrismaClient({ datasources: { db: { url: databaseUrl() } } });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = db;
-}
-
 function databaseUrl(): string {
   const url = process.env.DATABASE_URL;
   if (!url) {
@@ -22,3 +9,29 @@ function databaseUrl(): string {
   }
   return url;
 }
+
+function instantiateClient(): PrismaClient {
+  return new PrismaClient({ datasources: { db: { url: databaseUrl() } } });
+}
+
+/**
+ * One PrismaClient per process — Next.js hot reloads would otherwise open a
+ * connection pool per module evaluation.
+ *
+ * Instantiation is lazy (first property access), not eager: `next build`
+ * imports every route module to collect page data, and the build environment
+ * is intentionally DB-less — an eager throw there fails the build instead of
+ * surfacing at the first real query.
+ */
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+
+export const db: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_target, prop, receiver) {
+    if (!globalForPrisma.prisma) {
+      globalForPrisma.prisma = instantiateClient();
+    }
+    const client = globalForPrisma.prisma;
+    const value = Reflect.get(client, prop, receiver);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});
