@@ -29,8 +29,8 @@ export * from "./importer/types";
 export * from "./importer/importer";
 export * from "./seed/rng";
 export * from "./seed/attributes";
-export * from "./seed/images";
+// seed/images and seed/seed stay unexported: they pull @resvg/resvg-js's
+// native binary and node builtins, which break the web app's webpack build.
 export * from "./seed/names";
-export * from "./seed/seed";
 export * from "./seed/demo";
 export * from "./client";
