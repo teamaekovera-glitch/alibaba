@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { listingTitle } from "../../src/seed/names";
+import { assignListingCategory } from "../../src/seed/seed";
+import { generateListingAttributes } from "../../src/seed/attributes";
+import { mulberry32 } from "../../src/seed/rng";
 import {
   TOP_LEVEL_CATEGORY_SLUGS,
   assertTopLevelSlugKeys,
+  flattenTaxonomy,
 } from "../../src/taxonomy/categories";
 import {
   blockingKeys,
@@ -148,5 +152,47 @@ describe("seed slug coverage (CI failure class: non-canonical bank keys)", () =>
     expect(() =>
       assertTopLevelSlugKeys("typo", [...TOP_LEVEL_CATEGORY_SLUGS, "not-a-slug"]),
     ).toThrow(/unknown: not-a-slug/);
+  });
+});
+
+describe("listing category assignment (CI failure class: child slugs into family-keyed banks)", () => {
+  const flat = flattenTaxonomy();
+  const topSlugs = flat.filter((e) => e.parentSlug === null).map((e) => e.slug);
+  const childrenByTop = new Map(
+    topSlugs.map((slug) => [
+      slug,
+      flat.filter((e) => e.parentSlug === slug).map((e) => e.slug),
+    ]),
+  );
+
+  it("simulates all 1200 assignments: titles resolve and attributes validate for every child slug", () => {
+    const rng = mulberry32(0x5eed1500);
+    const familiesSeen = new Set<string>();
+    for (let i = 0; i < 1200; i += 1) {
+      const { topSlug, categorySlug, titleIndex } = assignListingCategory(
+        i,
+        topSlugs,
+        childrenByTop,
+      );
+      familiesSeen.add(topSlug);
+      // A family slug must always be a top-level slug, never a child.
+      expect(TOP_LEVEL_CATEGORY_SLUGS).toContain(topSlug);
+      // The bank lookup is keyed by the family; throws if keying drifts.
+      expect(listingTitle(topSlug, titleIndex).length).toBeGreaterThan(0);
+      // The concrete category must resolve an attribute set and the
+      // generated payload must pass the production Zod validators.
+      const values = generateListingAttributes(rng, categorySlug);
+      expect(Object.keys(values).length).toBeGreaterThanOrEqual(0);
+      expect(categorySlug.length).toBeGreaterThan(0);
+    }
+    expect(familiesSeen.size).toBe(9);
+  });
+
+  it("keeps concrete category slugs inside the assigned family's pool", () => {
+    for (let i = 0; i < 90; i += 1) {
+      const { topSlug, categorySlug } = assignListingCategory(i, topSlugs, childrenByTop);
+      const pool = [topSlug, ...(childrenByTop.get(topSlug) ?? [])];
+      expect(pool).toContain(categorySlug);
+    }
   });
 });

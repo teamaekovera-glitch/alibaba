@@ -39,6 +39,33 @@ const ORDER_COUNT = 60;
 /** Fixed epoch: 2026-01-05T00:00:00Z — never Date.now() in the seeder. */
 const SEED_EPOCH = Date.parse("2026-01-05T00:00:00.000Z");
 
+export interface ListingCategoryAssignment {
+  /** Top-level family slug — key for title banks, base prices, and imagery. */
+  topSlug: string;
+  /** Concrete category slug (family or one of its children) on the row. */
+  categorySlug: string;
+  /** Per-family listing index feeding the deterministic title bank. */
+  titleIndex: number;
+}
+
+/**
+ * Pure category assignment for listing i: families cycle round-robin, and
+ * each family's concrete category walks its own [family, ...children] pool,
+ * so all nine families are covered evenly regardless of child counts.
+ */
+export function assignListingCategory(
+  i: number,
+  topSlugs: readonly string[],
+  childrenByTop: ReadonlyMap<string, string[]>,
+): ListingCategoryAssignment {
+  const topSlug = topSlugs[i % topSlugs.length];
+  if (topSlug === undefined) throw new Error(`no top slug at ${i}`);
+  const childPool = [topSlug, ...(childrenByTop.get(topSlug) ?? [])];
+  const categorySlug = childPool[Math.floor(i / topSlugs.length) % childPool.length];
+  if (categorySlug === undefined) throw new Error(`empty category pool for ${topSlug}`);
+  return { topSlug, categorySlug, titleIndex: Math.floor(i / topSlugs.length) };
+}
+
 /** Realistic per-unit base prices (cents) per top-level category. */
 const CATEGORY_BASE_PRICE_CENTS: Record<string, number> = {
   rigid: 42,
@@ -249,13 +276,11 @@ export async function seedDatabase(client: PrismaClient): Promise<SeedSummary> {
     const supplierOrgId = supplierOrgRows[supplierIndex]?.id;
     if (supplierOrgId === undefined) throw new Error(`no supplier org at ${supplierIndex}`);
 
-    const topSlug = topSlugs[i % topSlugs.length];
-    if (topSlug === undefined) throw new Error(`no top slug at ${i}`);
-    const childPool = [topSlug, ...(childrenByTop.get(topSlug) ?? [])];
-    const categorySlug = childPool[Math.floor(i / topSlugs.length) % childPool.length];
-    if (categorySlug === undefined) throw new Error(`empty category pool for ${topSlug}`);
+    const { topSlug, categorySlug, titleIndex } = assignListingCategory(i, topSlugs, childrenByTop);
     const listingId = `${SEED_PREFIX}listing_${pad(i + 1, 4)}`;
-    const title = listingTitle(categorySlug, Math.floor(i / topSlugs.length));
+    // Title banks are keyed by top-level family: categorySlug may be a child
+    // slug (e.g. glass-bottles under rigid), which has no bank of its own.
+    const title = listingTitle(topSlug, titleIndex);
 
     const status = i % 20 < 17 ? "LIVE" : i % 20 === 17 ? "PAUSED" : "DRAFT";
     const stockLevel: StockLevel = weighted<StockLevel>(rng, [
