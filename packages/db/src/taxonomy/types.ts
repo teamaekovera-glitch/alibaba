@@ -18,7 +18,8 @@ export type AttributeType =
   | "multiEnum"
   | "dimensions";
 
-export interface AttributeDefinition {
+/** Type aliases (not interfaces) so sets stay assignable to Prisma's Json inputs. */
+export type AttributeDefinition = {
   key: string;
   label: string;
   type: AttributeType;
@@ -30,21 +31,30 @@ export interface AttributeDefinition {
   unit?: string;
   min?: number;
   max?: number;
-}
+};
 
-export interface AttributeSet {
+export type AttributeSet = {
   version: 1;
   attributes: AttributeDefinition[];
-}
+};
+
+/** JSON value shape — attribute values persist into Prisma Json columns. */
+export type AttributeJsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | AttributeJsonValue[]
+  | { [key: string]: AttributeJsonValue };
 
 /** Validated listing attribute values, as stored in Listing.attributes. */
-export type ListingAttributeValues = Record<string, unknown>;
+export type ListingAttributeValues = { [key: string]: AttributeJsonValue };
 
 /** A leaf or top-level taxonomy entry, seeded into Category by the seeder. */
-export interface CategoryDefinition {
+export type CategoryDefinition = {
   slug: string;
   name: string;
   position: number;
   attributeSet: AttributeSet;
   children?: { slug: string; name: string }[];
-}
+};

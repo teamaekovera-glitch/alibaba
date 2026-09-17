@@ -111,7 +111,10 @@ export function buildAttributeSchema(attributeSet: unknown): z.ZodType<ListingAt
   for (const definition of set.attributes) {
     shape[definition.key] = definition.required ? schemaForAttribute(definition) : schemaForAttribute(definition).optional();
   }
-  return z.object(shape).strict();
+  // Zod infers `{ [key: string]: unknown }` for a dynamic shape; every schema
+  // built by schemaForAttribute emits JSON values only, so the output type is
+  // guaranteed by construction (and re-checked at parse time).
+  return z.object(shape).strict() as z.ZodType<ListingAttributeValues>;
 }
 
 // ── Validation entry points ──────────────────────────────────────────────────
