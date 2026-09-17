@@ -24,3 +24,6 @@ export function Button({ children, variant = "primary", type = "button", ...rest
     </button>
   );
 }
+
+export { DemoDataBanner } from "./demo-banner";
+export type { DemoDataBannerProps } from "./demo-banner";

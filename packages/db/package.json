@@ -10,6 +10,7 @@
     "test": "prisma generate && vitest run",
     "test:integration": "prisma generate && vitest run --config vitest.integration.config.ts",
     "import": "tsx src/cli/import-cli.ts",
+    "seed": "tsx src/cli/seed-cli.ts",
     "fixtures:importer": "tsx scripts/generate-fixture.ts"
   },
   "dependencies": {
