@@ -120,21 +120,21 @@ export interface SeedSummary {
 }
 
 /** Deletes every seeded row, children first (FK-safe). */
-function wipeSeededRows(tx: Prisma.TransactionClient): void {
-  tx.review.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
-  tx.orderLine.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
-  tx.subOrder.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
-  tx.order.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
-  tx.moqPriceTier.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
-  tx.leadTimeRule.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
-  tx.listing.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
-  tx.orgMembership.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
-  tx.user.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
-  tx.capability.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
-  tx.plant.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
-  tx.supplierProfile.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
-  tx.organization.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
-  tx.category.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
+async function wipeSeededRows(tx: Prisma.TransactionClient): Promise<void> {
+  await tx.review.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
+  await tx.orderLine.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
+  await tx.subOrder.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
+  await tx.order.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
+  await tx.moqPriceTier.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
+  await tx.leadTimeRule.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
+  await tx.listing.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
+  await tx.orgMembership.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
+  await tx.user.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
+  await tx.capability.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
+  await tx.plant.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
+  await tx.supplierProfile.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
+  await tx.organization.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
+  await tx.category.deleteMany({ where: { id: { startsWith: SEED_PREFIX } } });
 }
 
 export async function seedDatabase(client: PrismaClient): Promise<SeedSummary> {
@@ -209,6 +209,9 @@ export async function seedDatabase(client: PrismaClient): Promise<SeedSummary> {
       state: place.state,
       country: "US",
       isPrimary: true,
+      // Explicit epoch: the column default is now(), which breaks rerun hashing.
+      createdAt: new Date(SEED_EPOCH + i * 60_000),
+      updatedAt: new Date(SEED_EPOCH + i * 60_000),
     });
     if (i % 4 === 0) {
       const otherPlace = placeAt(i + 3);
@@ -221,6 +224,8 @@ export async function seedDatabase(client: PrismaClient): Promise<SeedSummary> {
         state: otherPlace.state,
         country: "US",
         isPrimary: false,
+        createdAt: new Date(SEED_EPOCH + i * 60_000),
+        updatedAt: new Date(SEED_EPOCH + i * 60_000),
       });
     }
   }
@@ -381,6 +386,8 @@ export async function seedDatabase(client: PrismaClient): Promise<SeedSummary> {
         supplierProfileId: profileId,
         name: `category:${top}`,
         detail: "Seeded demo capability",
+        // Explicit epoch: the column default is now(), which breaks rerun hashing.
+        createdAt: new Date(SEED_EPOCH + s * 60_000),
       });
     }
     if (s % 3 === 0) {
@@ -390,6 +397,7 @@ export async function seedDatabase(client: PrismaClient): Promise<SeedSummary> {
         supplierProfileId: profileId,
         name: "claimed-cert:SQF",
         detail: "Fictional claimed certification for demo analytics",
+        createdAt: new Date(SEED_EPOCH + s * 60_000),
       });
     }
   }
@@ -523,24 +531,29 @@ export async function seedDatabase(client: PrismaClient): Promise<SeedSummary> {
   });
 
   // ── Persist (single transaction: wipe + recreate, atomically) ─────────────
-  await client.$transaction(async (tx) => {
-    wipeSeededRows(tx);
-    await tx.category.createMany({ data: categoryRows });
-    await tx.organization.createMany({ data: supplierOrgRows });
-    await tx.organization.createMany({ data: buyerOrgRows });
-    await tx.supplierProfile.createMany({ data: supplierProfileRows });
-    await tx.plant.createMany({ data: plantRows });
-    await tx.user.createMany({ data: userRows });
-    await tx.orgMembership.createMany({ data: membershipRows });
-    await tx.listing.createMany({ data: listingRows });
-    await tx.moqPriceTier.createMany({ data: moqTierRows });
-    await tx.leadTimeRule.createMany({ data: leadTimeRows });
-    await tx.capability.createMany({ data: capabilityRows });
-    await tx.order.createMany({ data: orderRows });
-    await tx.subOrder.createMany({ data: subOrderRows });
-    await tx.orderLine.createMany({ data: orderLineRows });
-    await tx.review.createMany({ data: reviewRows });
-  });
+  // The 1200-listing batch carries PNG data-URI images and takes well over
+  // Prisma's 5s default interactive-transaction timeout — headroom is cheap.
+  await client.$transaction(
+    async (tx) => {
+      await wipeSeededRows(tx);
+      await tx.category.createMany({ data: categoryRows });
+      await tx.organization.createMany({ data: supplierOrgRows });
+      await tx.organization.createMany({ data: buyerOrgRows });
+      await tx.supplierProfile.createMany({ data: supplierProfileRows });
+      await tx.plant.createMany({ data: plantRows });
+      await tx.user.createMany({ data: userRows });
+      await tx.orgMembership.createMany({ data: membershipRows });
+      await tx.listing.createMany({ data: listingRows });
+      await tx.moqPriceTier.createMany({ data: moqTierRows });
+      await tx.leadTimeRule.createMany({ data: leadTimeRows });
+      await tx.capability.createMany({ data: capabilityRows });
+      await tx.order.createMany({ data: orderRows });
+      await tx.subOrder.createMany({ data: subOrderRows });
+      await tx.orderLine.createMany({ data: orderLineRows });
+      await tx.review.createMany({ data: reviewRows });
+    },
+    { timeout: 60_000, maxWait: 10_000 },
+  );
 
   return {
     categories: categoryRows.length,

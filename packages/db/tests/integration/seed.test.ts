@@ -12,9 +12,12 @@ import { seedDatabase, type SeedSummary } from "../../src/seed/seed";
  * (spec verification table: rerunning the seed yields identical ids and
  * content; seeded counts are asserted; every seeded row is fictional).
  *
- * seedDatabase wipes previous seed_* rows itself, so these tests are safe to
- * rerun and need no truncation; assertions filter on the seed_ prefix so
- * rows written by other suites never pollute the counts.
+ * seedDatabase wipes previous seed_* rows itself, so the suite is safe to
+ * rerun; assertions filter on the seed_ prefix so rows written by other
+ * suites never pollute the counts. beforeAll still truncates the core
+ * tables: sibling suites write plain rows (e.g. the schema round-trip's
+ * "rigid" category) whose unique fields would collide with the taxonomy
+ * the seed creates.
  */
 
 const DATABASE_URL =
@@ -24,13 +27,18 @@ const pkgRoot = path.resolve(fileURLToPath(new URL("../..", import.meta.url)));
 
 const prisma = new PrismaClient({ datasources: { db: { url: DATABASE_URL } } });
 
-beforeAll(() => {
+beforeAll(async () => {
   // CI's service container starts empty — apply the committed migrations here.
   execSync("npx prisma migrate deploy", {
     cwd: pkgRoot,
     env: { ...process.env, DATABASE_URL },
     stdio: "pipe",
   });
+  // Start from a clean core graph regardless of what earlier suites left
+  // behind; CASCADE clears every table that references these rows.
+  await prisma.$executeRawUnsafe(
+    `TRUNCATE TABLE "Organization", "User", "Category", "PriceBenchmark" CASCADE`,
+  );
 });
 
 afterAll(async () => {
@@ -63,7 +71,7 @@ describe("deterministic fictional seed", () => {
   let first: SeedSummary;
   let firstHash: string;
 
-  it("seeds the documented volumes", async () => {
+  it("seeds the documented volumes", { timeout: 60_000 }, async () => {
     first = await seedDatabase(prisma);
 
     expect(first.supplierOrgs).toBe(150);
@@ -158,7 +166,7 @@ describe("deterministic fictional seed", () => {
     }
   });
 
-  it("reproduces identical rows and ids on rerun", async () => {
+  it("reproduces identical rows and ids on rerun", { timeout: 120_000 }, async () => {
     firstHash = await seedStateHash();
     const second = await seedDatabase(prisma);
     const secondHash = await seedStateHash();
