@@ -8,15 +8,19 @@
     "postinstall": "prisma generate",
     "typecheck": "prisma generate && tsc --noEmit",
     "test": "prisma generate && vitest run",
-    "test:integration": "prisma generate && vitest run --config vitest.integration.config.ts"
+    "test:integration": "prisma generate && vitest run --config vitest.integration.config.ts",
+    "import": "tsx src/cli/import-cli.ts",
+    "fixtures:importer": "tsx scripts/generate-fixture.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
     "@types/node": "^22.10.0",
     "prisma": "^6.19.3",
+    "tsx": "^4.23.13",
     "typescript": "^5.6.3",
     "vitest": "^3.0.0"
   }

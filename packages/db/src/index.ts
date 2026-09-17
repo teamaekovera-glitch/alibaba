@@ -18,4 +18,13 @@ export function databaseUrl(): string {
 export * from "./taxonomy/types";
 export * from "./taxonomy/categories";
 export * from "./attribute-validation";
+export * from "./importer/column-contract";
+export * from "./importer/normalize";
+export * from "./importer/similarity";
+export * from "./importer/parse-csv";
+export * from "./importer/dedup";
+export * from "./importer/read-rows";
+export * from "./importer/merge-report";
+export * from "./importer/types";
+export * from "./importer/importer";
 export * from "./client";
