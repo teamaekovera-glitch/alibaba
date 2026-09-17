@@ -1,3 +1,5 @@
+import { assertTopLevelSlugKeys } from "../taxonomy/categories";
+
 /**
  * Deterministic name banks for the fictional seed: supplier and buyer org
  * names plus per-category listing titles. All combinations are chosen by
@@ -71,27 +73,27 @@ const CATEGORY_TITLES: Record<string, { shapes: string[]; materials: string[]; s
     materials: ["B-flute", "C-flute", "E-flute", "BC-flute", "Kraft", "White top"],
     sizes: ["12×9×4 in", "16×12×6 in", "18×14×8 in", "24×18×12 in", "8×8×8 in", "20×16×10 in"],
   },
-  folding: {
+  paperboard: {
     shapes: ["Folding Carton", "Sleeve", "End Load Box", "Reverse Tuck", "Two-Piece Box", "Gable Box"],
     materials: ["SBS 16pt", "Kraft 12pt", "CCNB 14pt", "Metalized board", "Recycled board"],
     sizes: ["3×3×1 in", "4×4×2 in", "6×4×2 in", "8×6×3 in", "5×5×5 in", "9×6×3 in"],
   },
-  labels: {
+  "labels-shrink-sleeves": {
     shapes: ["Pressure-Sensitive Label", "Shrink Sleeve", "Tag", "Sticker Sheet", "In-Mold Label", "Neck Label"],
     materials: ["BOPP", "Paper", "Clear PET", "Foil", "Textured estate"],
     sizes: ["2×2 in", "4×2 in", "3×3 in", "6×4 in", "1.5×1.5 in", "8×3 in"],
   },
-  "cans-and-closures": {
+  "closures-caps": {
     shapes: ["Can End", "Closure", "Pump Cap", "Flip-Top Cap", "Snap Cap", "Tamper Band"],
     materials: ["Aluminum", "Tinplate", "PP", "HDPE", "PCR resin"],
     sizes: ["202", "206", "300", "38 mm", "24 mm", "28 mm"],
   },
-  "food-service": {
+  "trays-clamshells": {
     shapes: ["Compostable Plate", "Bowl", "Cutlery Set", "Lidding Film", "Napkin", "Sushi Tray"],
     materials: ["Bagasse", "Bamboo", "PLA", "Paper", "CPLA"],
     sizes: ["9 in", "6 in", "12 in", "10 in", "16 oz", "24 oz"],
   },
-  "shippers-and-protective": {
+  "secondary-tertiary": {
     shapes: ["Foam Insert", "Void Fill", "Insulated Liner", "Corner Protector", "Pallet Wrap", "Bubble Mailer"],
     materials: ["EPE foam", "Molded pulp", "Wool", "Air pillows", "Kraft honeycomb"],
     sizes: ["Small", "Medium", "Large", "XL", "Custom", "Standard"],
@@ -102,6 +104,11 @@ const CATEGORY_TITLES: Record<string, { shapes: string[]; materials: string[]; s
     sizes: ["12 oz", "16 oz", "500 ml", "250 g", "8 in", "10 in"],
   },
 };
+
+// Fail fast at import time if these banks drift from the canonical taxonomy
+// slugs (CI-caught failure class: a bank keyed by a non-canonical slug made
+// the seeder throw mid-run).
+assertTopLevelSlugKeys("CATEGORY_TITLES", Object.keys(CATEGORY_TITLES));
 
 const VARIANTS = ["", " — Clear", " — Kraft", " — Printed", " — Compostable", " — Recycled"] as const;
 

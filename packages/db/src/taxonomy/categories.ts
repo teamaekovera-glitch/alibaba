@@ -338,6 +338,26 @@ export const CATEGORY_TAXONOMY: CategoryDefinition[] = [
 ];
 
 export const TOP_LEVEL_CATEGORY_SLUGS: string[] = CATEGORY_TAXONOMY.map((c) => c.slug);
+/**
+ * Throws when a category-slug-keyed map does not cover exactly the
+ * top-level taxonomy slugs — protects seed data tables from drifting
+ * away from the canonical category slugs (a key typo would otherwise
+ * surface only as a runtime failure mid-seed).
+ */
+export function assertTopLevelSlugKeys(mapName: string, keys: readonly string[]): void {
+  const expected = [...TOP_LEVEL_CATEGORY_SLUGS].sort();
+  const actual = [...keys].sort();
+  const missing = expected.filter((slug) => !actual.includes(slug));
+  const unknown = actual.filter((slug) => !expected.includes(slug));
+  if (missing.length > 0 || unknown.length > 0) {
+    throw new Error(
+      `${mapName} keys do not match top-level category slugs — missing: ${
+        missing.join(", ") || "none"
+      }; unknown: ${unknown.join(", ") || "none"}`,
+    );
+  }
+}
+
 
 /** Flat list of every category row (top-level + children) for the seeder. */
 export function flattenTaxonomy(): { slug: string; name: string; parentSlug: string | null; position: number }[] {

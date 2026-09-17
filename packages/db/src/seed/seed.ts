@@ -1,5 +1,5 @@
 import { PrismaClient, Prisma, type StockLevel } from "@prisma/client";
-import { flattenTaxonomy, categoryDefinition } from "../taxonomy/categories";
+import { flattenTaxonomy, categoryDefinition, assertTopLevelSlugKeys } from "../taxonomy/categories";
 import { generateListingAttributes } from "./attributes";
 import { categoryImageDataUris } from "./images";
 import {
@@ -44,13 +44,17 @@ const CATEGORY_BASE_PRICE_CENTS: Record<string, number> = {
   rigid: 42,
   flexible: 14,
   corrugated: 55,
-  folding: 38,
-  labels: 6,
-  "cans-and-closures": 24,
-  "food-service": 18,
-  "shippers-and-protective": 95,
+  paperboard: 38,
+  "labels-shrink-sleeves": 6,
+  "closures-caps": 24,
+  "trays-clamshells": 18,
+  "secondary-tertiary": 95,
   "sustainable-compostable": 48,
 };
+
+// Fail fast at import time if this table drifts from the canonical taxonomy
+// slugs (same CI-caught failure class as the title banks).
+assertTopLevelSlugKeys("CATEGORY_BASE_PRICE_CENTS", Object.keys(CATEGORY_BASE_PRICE_CENTS));
 
 const ORDER_STATUS_CYCLE = [
   "CLOSED", "CLOSED", "ESCROW_RELEASED", "DELIVERED", "CLOSED", "IN_PRODUCTION",

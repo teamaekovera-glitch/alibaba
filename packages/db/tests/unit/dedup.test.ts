@@ -1,4 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { listingTitle } from "../../src/seed/names";
+import {
+  TOP_LEVEL_CATEGORY_SLUGS,
+  assertTopLevelSlugKeys,
+} from "../../src/taxonomy/categories";
 import {
   blockingKeys,
   decideDedup,
@@ -125,5 +130,23 @@ describe("blockingKeys", () => {
   it("emits no keys when every signal is missing", () => {
     const row = fp(2, "Summit Packaging", "", null, null);
     expect(blockingKeys(row)).toEqual([]);
+  });
+});
+
+describe("seed slug coverage (CI failure class: non-canonical bank keys)", () => {
+  it("has a title bank for every top-level category slug", () => {
+    for (const slug of TOP_LEVEL_CATEGORY_SLUGS) {
+      expect(() => listingTitle(slug, 0)).not.toThrow();
+      expect(listingTitle(slug, 0).length).toBeGreaterThan(0);
+    }
+  });
+
+  it("assertTopLevelSlugKeys throws on missing or unknown keys", () => {
+    expect(() => assertTopLevelSlugKeys("ok", TOP_LEVEL_CATEGORY_SLUGS)).not.toThrow();
+    const [first] = TOP_LEVEL_CATEGORY_SLUGS;
+    expect(() => assertTopLevelSlugKeys("short", [first ?? ""])).toThrow(/missing/);
+    expect(() =>
+      assertTopLevelSlugKeys("typo", [...TOP_LEVEL_CATEGORY_SLUGS, "not-a-slug"]),
+    ).toThrow(/unknown: not-a-slug/);
   });
 });
