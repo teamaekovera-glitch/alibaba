@@ -1,0 +1,22 @@
+# Local dev Postgres with the pgvector extension (spec: pgvector/pgvector:pg16
+# for dev/CI; Neon is the deploy target). Start with: docker compose up -d db
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: packsource-db
+    environment:
+      POSTGRES_USER: packsource
+      POSTGRES_PASSWORD: packsource
+      POSTGRES_DB: packsource
+    ports:
+      - "5432:5432"
+    volumes:
+      - packsource_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U packsource -d packsource"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  packsource_pgdata:

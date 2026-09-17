@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MOCK: "true"
+
+jobs:
+  verify:
+    name: lint + typecheck + test + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+  integration:
+    # Wired for the integration suites later workstreams add (Prisma
+    # repositories, importer, seeder determinism, search-index sync). Runs the
+    # per-workspace test:integration configs against a real pgvector Postgres;
+    # passWithNoTests keeps it green until suites exist, while the extension
+    # check proves the service container is pgvector-enabled.
+    name: integration (pgvector service)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: packsource
+          POSTGRES_PASSWORD: packsource
+          POSTGRES_DB: packsource_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U packsource -d packsource_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://packsource:packsource@localhost:5432/packsource_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify pgvector extension availability
+        run: |
+          psql "$DATABASE_URL" -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+          psql "$DATABASE_URL" -c 'SELECT extname FROM pg_extension;' | grep -q vector
+
+      - name: Integration suites (passWithNoTests until suites land)
+        run: pnpm test:integration

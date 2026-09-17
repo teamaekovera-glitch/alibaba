@@ -1,0 +1,18 @@
+# dependencies
+node_modules
+
+# builds
+.next
+dist
+.turbo
+*.tsbuildinfo
+next-env.d.ts
+
+# env & secrets — real keys are injected at deploy time, never committed
+.env
+.env.*
+
+# tooling
+coverage
+.eslintcache
+.DS_Store

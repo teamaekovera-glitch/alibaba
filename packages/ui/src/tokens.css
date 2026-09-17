@@ -1,0 +1,19 @@
+/*
+ * PackSource design tokens — Tailwind v4 CSS-first theme.
+ * Import after `@import "tailwindcss";` so the @theme block registers the
+ * custom colors as utilities (bg-brand-600, text-brand-700, ...).
+ */
+@theme {
+  --color-brand-50: #eef7f2;
+  --color-brand-100: #d5ecdf;
+  --color-brand-200: #aadcc0;
+  --color-brand-300: #79c69c;
+  --color-brand-400: #4aab79;
+  --color-brand-500: #2f8f5f;
+  --color-brand-600: #237249;
+  --color-brand-700: #1d5c3c;
+  --color-brand-800: #174930;
+  --color-brand-900: #113a26;
+  --color-accent-500: #f59e0b;
+  --color-accent-600: #d97706;
+}
