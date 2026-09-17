@@ -14,6 +14,7 @@
     "@packsource/ai": "workspace:*",
     "@packsource/core": "workspace:*",
     "@packsource/db": "workspace:*",
+    "@packsource/search": "workspace:*",
     "@packsource/ui": "workspace:*",
     "next": "^15.1.0",
     "next-auth": "5.0.0-beta.32",

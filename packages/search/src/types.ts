@@ -95,7 +95,7 @@ export type ListingFilters = {
   certifications?: string[];
   printMethods?: string[];
   sustainability?: string[];
-  verificationTier?: string[];
+  verificationTier?: VerificationTier[];
   featured?: boolean;
   booleanFlags?: string[];
   minPriceCents?: number;

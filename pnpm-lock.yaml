@@ -47,6 +47,9 @@ importers:
       '@packsource/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@packsource/search':
+        specifier: workspace:*
+        version: link:../../packages/search
       '@packsource/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -128,6 +131,34 @@ importers:
       '@resvg/resvg-js':
         specifier: ^2.6.2
         version: 2.6.2
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.20.3
+      prisma:
+        specifier: ^6.19.3
+        version: 6.19.3(typescript@5.9.3)
+      tsx:
+        specifier: ^4.23.13
+        version: 4.23.13
+      typescript:
+        specifier: ^5.6.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/node@22.20.3)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.13)
+
+  packages/search:
+    dependencies:
+      '@packsource/ai':
+        specifier: workspace:*
+        version: link:../ai
+      '@packsource/db':
+        specifier: workspace:*
+        version: link:../db
+      meilisearch:
+        specifier: ^0.51.0
+        version: 0.51.0
+    devDependencies:
       '@types/node':
         specifier: ^22.10.0
         version: 22.20.3
@@ -1730,6 +1761,9 @@ packages:
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
+
+  meilisearch@0.51.0:
+    resolution: {integrity: sha512-IuNsYyT8r/QLhU33XDZdXWUT6cA/nACCHHZc+NHkNuaU55LELRxff1uBJhpJcwjYaAPEEmeWrzBhYl2XlhJdAg==}
 
   merge2@1.4.1:
     resolution: {integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==}
@@ -3519,6 +3553,8 @@ snapshots:
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
+
+  meilisearch@0.51.0: {}
 
   merge2@1.4.1: {}
 
