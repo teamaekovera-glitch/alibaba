@@ -1,7 +1,7 @@
 /**
- * Database package shell. The Prisma client singleton, migrations, seed, and
- * CSV importer CLI arrive with the schema workstream; the scaffold pins the
- * datasource contract only.
+ * Database package. Prisma schema + migrations, the nine-category packaging
+ * taxonomy with its attribute-set dialect, and the Zod validators derived from
+ * those attribute sets.
  */
 export const DATABASE_URL_ENV = "DATABASE_URL" as const;
 
@@ -14,3 +14,7 @@ export function databaseUrl(): string {
   }
   return url;
 }
+
+export * from "./taxonomy/types";
+export * from "./taxonomy/categories";
+export * from "./attribute-validation";
