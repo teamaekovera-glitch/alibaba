@@ -222,6 +222,7 @@ export class QuoteRepository {
           },
         },
       });
+      const messageBody = input.message ? redactContactInfo(input.message) : null;
       await tx.negotiationMessage.create({
         data: {
           rfqId: rfq.id,
@@ -229,7 +230,19 @@ export class QuoteRepository {
           orgId: this.#auth.orgId,
           userId: this.#auth.userId,
           kind: "MESSAGE",
-          body: input.message ? redactContactInfo(input.message) : null,
+          body: messageBody,
+        },
+      });
+      // Mirror the quote into the supplier's own thread as a QUOTE_CARD —
+      // thread chats render generic Message rows, not the negotiation log.
+      await tx.message.create({
+        data: {
+          threadId: invite.id,
+          orgId: this.#auth.orgId,
+          senderUserId: this.#auth.userId,
+          kind: "QUOTE_CARD",
+          quoteId: quote.id,
+          body: messageBody,
         },
       });
       await this.#audit(tx, QUOTE_AUDIT.submit, "Quote", quote.id);

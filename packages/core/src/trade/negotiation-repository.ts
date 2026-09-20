@@ -8,6 +8,11 @@
  * Contact-sharing restriction (spec): message bodies are redacted on write
  * — emails/phones never reach the database in message content — and SYSTEM
  * messages are reserved for the platform.
+ *
+ * Thread chats render the generic Message model (thread-scoped): posts and
+ * quote/counter events are mirrored into the participating supplier's thread
+ * (TEXT / QUOTE_CARD); NegotiationMessage stays the RFQ-wide negotiation log
+ * (structured terms, revision history).
  */
 import { Prisma, type NegotiationMessageKind, type PrismaClient, type Thread } from "@packsource/db";
 import { assertCan, type Permission } from "../permissions";
@@ -125,16 +130,31 @@ export class NegotiationRepository {
 
     return this.#db.$transaction(async (tx) => {
       const thread = await this.#participatingThread(tx, threadId);
+      const body = input.body ? redactContactInfo(input.body) : null;
       const message = await tx.negotiationMessage.create({
         data: {
           rfqId: thread.rfqId,
           orgId: this.#auth.orgId,
           userId: this.#auth.userId,
           kind: input.kind,
-          body: input.body ? redactContactInfo(input.body) : null,
+          body,
           terms: input.terms ? redactTerms(input.terms) : Prisma.JsonNull,
         },
       });
+      // Thread chats render generic Message rows, not the negotiation log —
+      // mirror the post so it is visible in its own thread only. A
+      // COUNTER_OFFER carrying only structured terms stays log-only.
+      if (body !== null) {
+        await tx.message.create({
+          data: {
+            threadId: thread.id,
+            orgId: this.#auth.orgId,
+            senderUserId: this.#auth.userId,
+            kind: "TEXT",
+            body,
+          },
+        });
+      }
       await this.#audit(tx, NEGOTIATION_AUDIT.message, message.id);
       return message;
     });
@@ -225,6 +245,7 @@ export class NegotiationRepository {
         where: { id: head.id },
         data: { status: nextChild },
       });
+      const counterBody = input.message ? redactContactInfo(input.message) : null;
       const message = await tx.negotiationMessage.create({
         data: {
           rfqId: head.rfqId,
@@ -232,7 +253,7 @@ export class NegotiationRepository {
           orgId: this.#auth.orgId,
           userId: this.#auth.userId,
           kind: "COUNTER_OFFER",
-          body: input.message ? redactContactInfo(input.message) : null,
+          body: counterBody,
           terms: redactTerms({
             quantity,
             unitPriceCents,
@@ -242,6 +263,26 @@ export class NegotiationRepository {
             dutyBps,
             leadTimeDays,
           }),
+        },
+      });
+      // Mirror the revision into the supplier's own thread as a QUOTE_CARD —
+      // thread chats render generic Message rows, so the buyer sees the
+      // counter in-thread without exposing other suppliers' activity.
+      const thread = await tx.thread.findFirst({
+        where: { rfqId: head.rfqId, supplierOrgId: this.#auth.orgId, kind: "RFQ" },
+        select: { id: true },
+      });
+      if (!thread) {
+        throw new RecordNotFoundError("RFQ invitation", head.rfqId);
+      }
+      await tx.message.create({
+        data: {
+          threadId: thread.id,
+          orgId: this.#auth.orgId,
+          senderUserId: this.#auth.userId,
+          kind: "QUOTE_CARD",
+          quoteId: revision.id,
+          body: counterBody,
         },
       });
       await this.#audit(tx, NEGOTIATION_AUDIT.counter, message.id);
@@ -263,8 +304,10 @@ export class NegotiationRepository {
   async threadMessages(threadId: string) {
     this.#require("message:send");
     const thread = await this.#participatingThread(this.#db, threadId);
-    return this.#db.negotiationMessage.findMany({
-      where: { rfqId: thread.rfqId, OR: [{ quoteId: thread.id }, { quote: { rfqId: thread.rfqId } }] },
+    // Thread chats render generic Message rows (TEXT chat + QUOTE_CARD
+    // mirrors), scoped to this thread — never the RFQ-wide negotiation log.
+    return this.#db.message.findMany({
+      where: { threadId: thread.id },
       orderBy: { createdAt: "asc" },
     });
   }
