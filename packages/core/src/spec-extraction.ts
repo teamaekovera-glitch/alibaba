@@ -48,8 +48,8 @@ export interface ReasoningProvenance {
 const DIMENSIONS_PATTERN = /(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)\s*(mm|millimeters?)\b/i;
 const NUMBER_UNIT_PATTERN = /(\d+(?:\.\d+)?)\s*UNIT/i;
 const COLOR_COUNT_PATTERN = /(\d+)\s*(?:print\s*)?(?:colou?rs?|inks?)/i;
-const LABEL_THEN_VALUE_PATTERN = /(LABEL)\s*[:\-]\s*([A-Za-z0-9 .\-/]{2,60})/;
-const NEGATION_PATTERN = /\bno[t]?\s+(LABEL)|LABEL\s*[:\-]\s*(no|false|none)\b/i;
+const LABEL_THEN_VALUE_PATTERN = /(LABEL)\s*[:-]\s*([A-Za-z0-9 .\-/]{2,60})/;
+const NEGATION_PATTERN = /\bno[t]?\s+(LABEL)|LABEL\s*[:-]\s*(no|false|none)\b/i;
 const SNIPPET_CONTEXT_CHARS = 60;
 
 /** Lowercases and strips separators so enum options match prose spellings
