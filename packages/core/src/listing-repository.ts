@@ -52,7 +52,8 @@ export type ListingImageEntry = {
 export interface ListingVariantUpsertInput {
   sku: string;
   barcode?: string | null;
-  attributes?: Prisma.InputJsonValue;
+  /** JSON-safe by construction — every writer passes Zod-validated input. */
+  attributes?: Record<string, unknown>;
   unitPriceCents?: number | null;
   stockQty?: number | null;
   stockLevel?: StockLevel | null;
@@ -392,7 +393,7 @@ export class ListingRepository {
             orgId: this.#auth.orgId,
             sku: variant.sku,
             barcode: variant.barcode ?? null,
-            attributes: variant.attributes,
+            attributes: variant.attributes as Prisma.InputJsonValue | undefined,
             unitPriceCents: variant.unitPriceCents ?? null,
             stockQty: variant.stockQty ?? null,
             stockLevel: variant.stockLevel ?? null,
