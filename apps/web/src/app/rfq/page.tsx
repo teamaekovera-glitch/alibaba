@@ -1,4 +1,5 @@
 import { PermissionDeniedError } from "@packsource/core";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { tradeRepositories } from "@/lib/trade";
@@ -30,9 +31,9 @@ export default async function RfqDashboardPage() {
             RFQs are created by buyer accounts. Suppliers can see incoming quote
             requests in their inbox.
           </p>
-          <a className="mt-4 inline-block text-sm underline" href="/rfq/inbox" data-testid="go-to-inbox">
+          <Link className="mt-4 inline-block text-sm underline" href="/rfq/inbox" data-testid="go-to-inbox">
             Go to supplier inbox
-          </a>
+          </Link>
         </main>
       );
     }
@@ -44,8 +45,8 @@ export default async function RfqDashboardPage() {
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold" data-testid="rfq-dashboard-title">RFQs</h1>
         <nav className="flex gap-4 text-sm">
-          <a className="underline" href="/rfq/inbox" data-testid="nav-inbox">Supplier inbox</a>
-          <a className="underline" href="/cart" data-testid="nav-cart">Quote cart</a>
+          <Link className="underline" href="/rfq/inbox" data-testid="nav-inbox">Supplier inbox</Link>
+          <Link className="underline" href="/cart" data-testid="nav-cart">Quote cart</Link>
         </nav>
       </header>
 
