@@ -109,8 +109,12 @@ export type ListingFilters = {
 
 export type ListingSort = "relevance" | "price-asc" | "price-desc" | "lead-time-asc";
 
+/** Discovery mode: plain keyword/keyword-facet search, or hybrid keyword ∪ semantic. */
+export type ListingSearchMode = "relevance" | "hybrid";
+
 export type ListingSearchQuery = {
   q: string;
+  mode?: ListingSearchMode;
   filters?: ListingFilters;
   sort?: ListingSort;
   limit?: number;
