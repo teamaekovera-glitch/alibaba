@@ -329,10 +329,14 @@ export async function importListingsCsv(
   }
 
   const rowErrors = errors.filter((e) => e.lineNumber > 1);
+  // Counts are row-based: one CSV line can carry several error entries, and
+  // a row that fails at the repository level appears in both `rows` and
+  // `errors`, so distinct line numbers — not entry counts — are the truth.
+  const failedLines = new Set(rowErrors.map((e) => e.lineNumber));
   return {
-    totalRows: rows.length + rowErrors.length,
+    totalRows: new Set([...imported.map((i) => i.lineNumber), ...failedLines]).size,
     importedCount: imported.length,
-    skippedCount: rowErrors.length,
+    skippedCount: failedLines.size,
     errors,
     imported,
   };
