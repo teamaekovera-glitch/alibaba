@@ -4,6 +4,7 @@
  * and the contact-sharing policy.
  */
 export * from "./landed-cost";
+export * from "./cart-repository";
 export * from "./negotiation-repository";
 export * from "./quote-machine";
 export * from "./quote-repository";
