@@ -77,6 +77,8 @@ export type ListingSearchDocument = SearchDocument & {
   featured: boolean;
   /** True when any listing attribute is a true boolean (e.g. hotFillCapable). */
   booleanFlags: string[];
+  /** First listing image URL (seeded placeholder art ships as data URIs). */
+  primaryImageUrl: string | null;
   seedIsFictional: boolean;
   updatedAt: string;
 };

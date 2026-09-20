@@ -1,12 +1,20 @@
 import { createAdapters } from "@packsource/ai";
-import { visualSearchListings } from "@packsource/search";
+import {
+  visualSearchListings,
+  type ListingSearchDocument,
+  type VisualSearchMatch,
+} from "@packsource/search";
 import { db } from "@/lib/db";
+import { storage } from "@/lib/adapters";
+import { documentsForListings, visualUploadKey } from "@/lib/search-hydrate";
 
 /**
- * Visual search API — the image upload path. An uploaded image classifies into
- * deterministic attribute tags through the configured Vision adapter (the
- * zero-key mock by default), tags map to structured facet filters, and
- * similarity ranks facet-filtered listings by tag-derived cosine distance.
+ * Visual search API — the image upload path. An uploaded image is stored
+ * through the storage adapter (the zero-key R2 mock by default), classifies
+ * into deterministic attribute tags through the configured Vision adapter,
+ * tags map to structured facet filters, and similarity ranks facet-filtered
+ * listings by tag-derived cosine distance. Each result carries its full
+ * search document so the storefront renders the same cards as text search.
  */
 export const dynamic = "force-dynamic";
 
@@ -32,6 +40,11 @@ function parseVisualBody(body: unknown): { error: string } | { base64: string; m
   return { base64, mimeType };
 }
 
+/** A visual match upgraded from the summary document to the full search document. */
+type HydratedVisualMatch = Omit<VisualSearchMatch, "document"> & {
+  document: ListingSearchDocument;
+};
+
 export async function POST(request: Request): Promise<Response> {
   let body: unknown;
   try {
@@ -46,6 +59,16 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const adapters = createAdapters();
+    // Upload audit trail through the storage adapter (deterministic content
+    // key; the mock keeps it in memory). A storage failure is a real
+    // degradation — the route fails structured, never silently.
+    const bytes = Uint8Array.from(atob(parsed.base64), (char) => char.charCodeAt(0));
+    const upload = await storage.put(
+      visualUploadKey(parsed.base64, parsed.mimeType),
+      bytes,
+      parsed.mimeType,
+    );
+
     const matches = await visualSearchListings(
       db,
       adapters.vision,
@@ -53,14 +76,28 @@ export async function POST(request: Request): Promise<Response> {
       { base64: parsed.base64, mimeType: parsed.mimeType },
       { limit: 10 },
     );
+    const documents = await documentsForListings(
+      db,
+      matches.map((match) => match.listingId),
+    );
+    // Full documents for identical card rendering; drop listings that vanished
+    // between search and hydration.
+    const hydrated: HydratedVisualMatch[] = [];
+    for (const match of matches) {
+      const document = documents.get(match.listingId);
+      if (document) {
+        hydrated.push({ ...match, document });
+      }
+    }
     return Response.json({
       mode: "visual",
-      results: matches,
+      uploadKey: upload.key,
+      results: hydrated,
     });
   } catch (error) {
     // Visual search degrades like text discovery: structured 503, never a 500
     // stack trace. The vision/embedding mocks do not throw; reaching here
-    // means Postgres itself failed.
+    // means storage or Postgres itself failed.
     console.error("[/api/search/visual] visual search failed", error);
     return Response.json(
       { error: "visual search is temporarily unavailable" },
@@ -68,4 +105,3 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 }
-

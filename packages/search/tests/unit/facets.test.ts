@@ -25,6 +25,7 @@ function baseListing(overrides: Partial<FacetSourceListing> = {}): FacetSourceLi
       hotFillCapable: true,
       printMethod: ["OFFSET", "DIGITAL"],
     },
+    images: null,
     seedIsFictional: true,
     updatedAt: new Date("2026-09-01T00:00:00.000Z"),
     category: { slug: "pet-bottles", parent: { slug: "rigid" } },
