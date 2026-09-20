@@ -83,5 +83,8 @@ jobs:
           psql "$DATABASE_URL" -c 'CREATE EXTENSION IF NOT EXISTS vector;'
           psql "$DATABASE_URL" -c 'SELECT extname FROM pg_extension;' | grep -q vector
 
+      - name: Apply Prisma migrations
+        run: pnpm --filter @packsource/db exec prisma migrate deploy
+
       - name: Integration suites (passWithNoTests until suites land)
         run: pnpm test:integration
