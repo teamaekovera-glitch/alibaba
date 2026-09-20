@@ -86,6 +86,23 @@ export const LEGAL_DISPUTE_RESOLUTIONS: readonly OrderStatus[] = [
   "CANCELLED",
 ];
 
+/**
+ * States at or after delivery — the shared definition of "delivered" for
+ * verified-purchase reviews, delivered-order counters, and contact-sharing.
+ * Kept next to the state machine so review eligibility and escrow semantics
+ * can never drift apart.
+ */
+export const POST_DELIVERY_ORDER_STATUSES: readonly OrderStatus[] = [
+  "DELIVERED",
+  "ESCROW_RELEASED",
+  "PARTIALLY_REFUNDED",
+  "CLOSED",
+];
+
+export function isDeliveredOrderStatus(status: OrderStatus): boolean {
+  return POST_DELIVERY_ORDER_STATUSES.includes(status);
+}
+
 /** Cancel is legal until production starts (spec: "Cancel before production"). */
 const CANCELABLE_STATUSES: readonly OrderStatus[] = [
   "DRAFT",

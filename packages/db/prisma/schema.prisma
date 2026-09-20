@@ -370,6 +370,7 @@ model Organization {
   disputesOpened         Dispute[]
   threadsAsBuyer         Thread[]             @relation("ThreadBuyer")
   threadsAsSupplier      Thread[]             @relation("ThreadSupplier")
+  threadReadStates       ThreadReadState[]
   messages               Message[]
   messageAttachments     MessageAttachment[]
   reviewsWritten         Review[]             @relation("ReviewBuyer")
@@ -1318,9 +1319,27 @@ model Thread {
   updatedAt     DateTime      @updatedAt
 
   messages Message[]
+  readStates ThreadReadState[]
 
   @@index([buyerOrgId, lastMessageAt])
   @@index([supplierOrgId])
+}
+
+// Per-org read marker for unread counts (spec: "Trust & comms — messaging":
+// unread/pagination basics). One row per thread per participant org; the
+// marker stores the last inbound message the org has seen.
+model ThreadReadState {
+  id          String   @id @default(cuid())
+  threadId    String
+  thread      Thread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id])
+  lastReadAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([threadId, orgId])
+  @@index([orgId, threadId])
 }
 
 // Per-message translation cache (originals kept, translations in `translations`).
