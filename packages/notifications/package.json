@@ -1,0 +1,22 @@
+{
+  "name": "@packsource/notifications",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "prisma generate --schema=../db/prisma/schema.prisma && tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "prisma generate --schema=../db/prisma/schema.prisma && vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@packsource/core": "workspace:*",
+    "@packsource/db": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "prisma": "^6.19.3",
+    "typescript": "^5.6.3",
+    "vitest": "^3.0.0"
+  }
+}

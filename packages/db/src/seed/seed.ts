@@ -603,7 +603,10 @@ export async function seedDatabase(client: PrismaClient): Promise<SeedSummary> {
 
   // ── Persist (single transaction: wipe + recreate, atomically) ─────────────
   // The 1200-listing batch carries PNG data-URI images and takes well over
-  // Prisma's 5s default interactive-transaction timeout — headroom is cheap.
+  // Prisma's 5s default interactive-transaction timeout — and on a warm
+  // database (post-vacuum sibling suites, CI runners under load) it has been
+  // observed exceeding 60s too. Headroom is cheap: match the suites' 300s
+  // hook budget.
   await client.$transaction(
     async (tx) => {
       await wipeSeededRows(tx);
@@ -623,7 +626,7 @@ export async function seedDatabase(client: PrismaClient): Promise<SeedSummary> {
       await tx.orderLine.createMany({ data: orderLineRows });
       await tx.review.createMany({ data: reviewRows });
     },
-    { timeout: 60_000, maxWait: 10_000 },
+    { timeout: 300_000, maxWait: 10_000 },
   );
 
   return {
