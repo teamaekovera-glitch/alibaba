@@ -371,6 +371,77 @@ export async function seedDatabase(client: PrismaClient): Promise<SeedSummary> {
     if (tops !== undefined && !tops.includes(topSlug)) tops.push(topSlug);
   }
 
+  // ── Supplier workflow listings (draft/pending per supplier) ─────────────────
+  // The supplier console needs rows in DRAFT and PENDING_REVIEW on a fresh
+  // seed so the lifecycle UI has something to exercise. Two per supplier,
+  // both category-valid and complete enough to submit.
+  for (let s = 0; s < SUPPLIER_COUNT; s += 1) {
+    const supplierOrgId = supplierOrgRows[s]?.id;
+    if (supplierOrgId === undefined) throw new Error(`no supplier org at ${s}`);
+    const topSlug = topSlugs[s % topSlugs.length];
+    if (topSlug === undefined) throw new Error(`no top-level slug at ${s % topSlugs.length}`);
+    const children = childrenByTop.get(topSlug) ?? [];
+    const childSlug = children[s % Math.max(1, children.length)];
+    const categorySlug = childSlug ?? topSlug;
+    const artUrl = art.get(topSlug);
+    if (artUrl === undefined) throw new Error(`no art for category ${topSlug}`);
+
+    const workflowStates = [
+      { status: "DRAFT", suffix: "draft" },
+      { status: "PENDING_REVIEW", suffix: "pending" },
+    ] as const;
+    for (let w = 0; w < workflowStates.length; w += 1) {
+      const workflow = workflowStates[w];
+      if (!workflow) throw new Error(`workflow state underflow at ${w}`);
+      const listingId = `${SEED_PREFIX}listing_wf_${pad(s + 1, 3)}_${workflow.suffix}`;
+      const title = listingTitle(topSlug, LISTING_COUNT + s * 10 + w);
+
+      listingRows.push({
+        id: listingId,
+        orgId: supplierOrgId,
+        categoryId: `${SEED_PREFIX}cat_${categorySlug}`,
+        title,
+        slug: `seed-listing-wf-${pad(s + 1, 3)}-${workflow.suffix}`,
+        description: `Fictional demo listing for ${title} (${workflow.suffix} workflow row).`,
+        status: workflow.status,
+        attributes: generateListingAttributes(rng, categorySlug),
+        images: [{ url: artUrl, alt: `${title} — demo placeholder`, position: 0 }],
+        stockLevel: "MADE_TO_ORDER",
+        capacityUnitsPerWeek: 5_000,
+        seedIsFictional: true,
+        publishedAt: null,
+        createdAt: new Date(SEED_EPOCH + (LISTING_COUNT + s) * 60_000),
+        updatedAt: new Date(SEED_EPOCH + (LISTING_COUNT + s) * 60_000 + w * 60_000),
+      });
+
+      // Two-tier descending ladder so every seeded listing satisfies the
+      // documented invariant that listings carry a descending MOQ ladder.
+      for (let t = 0; t < 2; t += 1) {
+        const minQty = MOQ_LADDER[t];
+        if (minQty === undefined) throw new Error(`MOQ ladder underflow at tier ${t}`);
+        moqTierRows.push({
+          id: `${SEED_PREFIX}moq_wf_${pad(s + 1, 3)}_${workflow.suffix}_${t}`,
+          listingId,
+          orgId: supplierOrgId,
+          minQty,
+          unitPriceCents: Math.max(
+            1,
+            Math.round((CATEGORY_BASE_PRICE_CENTS[topSlug] ?? 40) * (1 - 0.08 * t)),
+          ),
+        });
+      }
+
+      leadTimeRows.push({
+        id: `${SEED_PREFIX}lead_wf_${pad(s + 1, 3)}_${workflow.suffix}`,
+        listingId,
+        orgId: supplierOrgId,
+        qtyMin: MOQ_LADDER[0] ?? 500,
+        qtyMax: null,
+        productionDays: 12,
+      });
+    }
+  }
+
   // ── Capabilities per supplier (from assigned categories) ───────────────────
   const capabilityRows: Prisma.CapabilityCreateManyInput[] = [];
   for (let s = 0; s < SUPPLIER_COUNT; s += 1) {

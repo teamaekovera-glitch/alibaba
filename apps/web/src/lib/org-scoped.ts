@@ -1,4 +1,10 @@
-import { OrgScopedRepository, ROLES, type AuthContext, type Role } from "@packsource/core";
+import {
+  ListingRepository,
+  OrgScopedRepository,
+  ROLES,
+  type AuthContext,
+  type Role,
+} from "@packsource/core";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 
@@ -11,7 +17,7 @@ import { db } from "@/lib/db";
  * Returns null when there is no session (the caller redirects) or the
  * session's role is not a known role.
  */
-export async function orgScopedRepository(): Promise<OrgScopedRepository | null> {
+async function authContext(): Promise<AuthContext | null> {
   const session = await auth();
   if (!session?.user.orgId || !session.user.role) {
     return null;
@@ -20,10 +26,20 @@ export async function orgScopedRepository(): Promise<OrgScopedRepository | null>
   if (!role) {
     return null;
   }
-  const authContext: AuthContext = {
+  return {
     userId: session.user.id,
     orgId: session.user.orgId,
     role: role as Role,
   };
-  return new OrgScopedRepository(db, authContext);
+}
+
+export async function orgScopedRepository(): Promise<OrgScopedRepository | null> {
+  const ctx = await authContext();
+  return ctx && new OrgScopedRepository(db, ctx);
+}
+
+/** Repository for supplier listing management — same gating, listing domain. */
+export async function listingRepository(): Promise<ListingRepository | null> {
+  const ctx = await authContext();
+  return ctx && new ListingRepository(db, ctx);
 }

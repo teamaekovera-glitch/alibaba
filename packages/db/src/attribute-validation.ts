@@ -222,7 +222,9 @@ export function safeValidateSingleAttribute(
   definition: AttributeDefinition,
   value: unknown,
 ): AttributeValidationResult {
-  return safeValidateAttributes({ attributes: [definition] } as unknown, {
+  // The set schema requires the version envelope, so a one-attribute subset
+  // must still carry it — otherwise every call fails on the wrapper, not the value.
+  return safeValidateAttributes({ version: 1, attributes: [definition] } as unknown, {
     [definition.key]: value,
   });
 }
