@@ -9,9 +9,17 @@ export default function Home() {
         Packaging marketplace scaffold — discovery, RFQ, and protected purchasing for CPG
         brands.
       </p>
-      <Link href="/health">
-        <Button>Health check</Button>
-      </Link>
+      <div className="flex gap-3">
+        <Link href="/health">
+          <Button>Health check</Button>
+        </Link>
+        <Link
+          href="/listings"
+          className="rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-800 hover:bg-neutral-50"
+        >
+          Listing console
+        </Link>
+      </div>
     </main>
   );
 }

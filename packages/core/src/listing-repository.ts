@@ -124,13 +124,19 @@ function parseImageEntry(raw: Prisma.JsonValue): ListingImageEntry | null {
   return entry;
 }
 
-/**
- * Typed image entries → Prisma JSON input. JSON.stringify drops undefined
+/** Typed image entries → Prisma JSON input. JSON.stringify drops undefined
  * optional fields, which is exactly the write shape we want; round-tripping
- * here keeps every JSON write honest instead of casting at each call site.
- */
+ * here keeps every JSON write honest instead of casting at each call site. */
 function imageEntriesToJson(entries: ListingImageEntry[]): Prisma.InputJsonValue {
   return JSON.parse(JSON.stringify(entries)) as Prisma.InputJsonValue;
+}
+
+/** Parses the Listing.images JSON column for read-side consumers (pages). */
+export function parseListingImages(images: Prisma.JsonValue): ListingImageEntry[] {
+  if (!Array.isArray(images)) {
+    return [];
+  }
+  return images.map(parseImageEntry).filter((entry): entry is ListingImageEntry => entry !== null);
 }
 
 /**
@@ -161,6 +167,7 @@ const listingInclude = {
   moqTiers: { orderBy: { minQty: "asc" } },
   leadTimes: { orderBy: { qtyMin: "asc" } },
   specSheets: { orderBy: { createdAt: "asc" } },
+  category: { select: { slug: true, name: true } },
 } satisfies Prisma.ListingInclude;
 
 export type ListingWithRelations = Prisma.ListingGetPayload<{ include: typeof listingInclude }>;
