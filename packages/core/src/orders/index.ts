@@ -8,6 +8,7 @@ export * from "./order-machine";
 export * from "./payment-schedule";
 export * from "./escrow";
 export * from "./ports";
+export * from "./invoice-document";
 export * from "./reorder-repository";
 export * from "./order-repository";
 export * from "./jobs";

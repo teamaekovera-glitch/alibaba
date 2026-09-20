@@ -11,6 +11,7 @@ import { assertCan, type Permission } from "../permissions";
 import { RecordNotFoundError, type AuthContext } from "../repositories";
 import { EscrowError, commissionSplit, escrowBalance, escrowKeys, releaseDecision } from "./escrow";
 import { assertNet30Approved, balancePlan, net30DueAt, upfrontPlan } from "./payment-schedule";
+import { renderInvoiceDocument, surchargesFromOrder } from "./invoice-document";
 import { orderTransition, type OrderSnapshot } from "./order-machine";
 import type { OrderPaymentsPort, OrderStoragePort } from "./ports";
 
@@ -783,13 +784,35 @@ export class OrderRepository {
         for (const payment of payments) {
           await this.#refundPaymentRow(tx, order, payment.id, payment.amountCents, resolution.reason, at);
         }
+        await this.#issueInvoice(
+          tx,
+          order,
+          null,
+          "CREDIT_NOTE",
+          this.#paidCents(payments),
+          resolution.reason,
+          at,
+          undefined,
+          { amountCents: this.#paidCents(payments), reason: resolution.reason },
+        );
       } else if (resolution.type === "REFUND_PARTIAL") {
         to = "PARTIALLY_REFUNDED";
-        const paid = payments.reduce((sum, p) => sum + p.amountCents, 0);
+        const paid = this.#paidCents(payments);
         if (resolution.amountCents <= 0 || resolution.amountCents > paid) {
           throw new EscrowError(`partial refund ${resolution.amountCents}c exceeds captured ${paid}c`);
         }
         await this.#refundPaymentRow(tx, order, payments[0]?.id ?? null, resolution.amountCents, resolution.reason, at, disputeId);
+        await this.#issueInvoice(
+          tx,
+          order,
+          null,
+          "CREDIT_NOTE",
+          paid,
+          resolution.reason,
+          at,
+          undefined,
+          { amountCents: resolution.amountCents, reason: resolution.reason },
+        );
       } else {
         to = "DELIVERED";
       }
@@ -893,7 +916,6 @@ export class OrderRepository {
       .filter((p) => p.status === "SUCCEEDED")
       .reduce((sum, p) => sum + p.amountCents, 0);
   }
-
   /** Load an order inside a transaction, refusing cross-org writes. */
   async #loadForUpdate(tx: Prisma.TransactionClient, orderId: string): Promise<OrderRow> {
     const order = await tx.order.findUnique({
@@ -983,6 +1005,7 @@ export class OrderRepository {
     note: string,
     at: Date,
     paymentId?: string,
+    credit?: { amountCents: number; reason: string },
   ) {
     const existing = await tx.invoice.findFirst({
       where: { orderId: order.id, kind },
@@ -995,11 +1018,27 @@ export class OrderRepository {
     const dueAt =
       kind === "PRO_FORMA" ? at : order.paymentSchedule === "NET_30" ? net30DueAt(at) : at;
     const pdfKey = `invoices/${order.id}/${number.toLowerCase()}.txt`;
-    await this.#storage.put(
-      pdfKey,
-      `PackSource invoice ${number}\nOrder ${order.id}\nTotal ${totalCents} cents\n${note}\nIssued ${at.toISOString()}\n`,
-      "text/plain",
-    );
+    const document = renderInvoiceDocument({
+      number,
+      kind,
+      orderId: order.id,
+      buyerOrgId: order.orgId,
+      supplierOrgId: order.subOrders[0]?.orgId ?? order.orderLines[0]?.orgId ?? "",
+      issuedAt: at,
+      dueAt,
+      paymentSchedule: order.paymentSchedule,
+      orderLines: order.orderLines.map((line) => ({
+        description: line.description,
+        quantity: line.quantity,
+        unitPriceCents: line.unitPriceCents,
+        totalCents: line.totalCents,
+      })),
+      surcharges: surchargesFromOrder(order),
+      totalCents,
+      note,
+      ...(credit ? { credit } : {}),
+    });
+    await this.#storage.put(pdfKey, document, "text/plain");
     const invoice = await tx.invoice.create({
       data: {
         orderId: order.id,
