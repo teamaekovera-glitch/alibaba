@@ -15,6 +15,7 @@
     "vitest": "^3.0.0"
   },
   "dependencies": {
+    "@packsource/ai": "workspace:*",
     "@packsource/db": "workspace:*",
     "zod": "^4.6.5"
   }
