@@ -14,6 +14,7 @@ import { assertCan, type Permission } from "../permissions";
 import { RecordNotFoundError, type AuthContext } from "../repositories";
 import { redactContactInfo } from "../trade/redaction";
 import { isLegalReviewModeration, validateRatings, type RatingAggregate, type RatingRow, averageRatings } from "./review-machine";
+import { enforceRateLimit, findDuplicateReview } from "./fraud";
 
 /** Audit-log actions written by the reviews repository. */
 export const REVIEWS_AUDIT = {
@@ -158,6 +159,24 @@ export class ReviewsRepository {
     }
 
     return this.#db.$transaction(async (tx) => {
+      // Fraud controls: sliding-window cap per buyer org, then a
+      // duplicate-body check that flags repeat-paste reviews.
+      await enforceRateLimit(tx, "reviews", this.#auth.orgId);
+      if (input.body) {
+        const prior = await findDuplicateReview(tx, this.#auth.orgId, input.body);
+        if (prior) {
+          await tx.fraudFlag.create({
+            data: {
+              orgId: this.#auth.orgId,
+              subjectType: "listing",
+              subjectId: prior.listingId ?? order.id,
+              reason: `duplicate review body matching prior review ${prior.id}`,
+              severity: "MEDIUM",
+            },
+          });
+          throw new ReviewError("this review duplicates one you recently submitted");
+        }
+      }
       const review = await tx.review.create({
         data: {
           orgId: this.#auth.orgId,

@@ -19,6 +19,7 @@ import { POST_DELIVERY_ORDER_STATUSES } from "../orders/order-machine";
 import { assertCan, type Permission } from "../permissions";
 import { RecordNotFoundError, type AuthContext } from "../repositories";
 import { canShareContacts, redactContactInfo } from "../trade/redaction";
+import { enforceRateLimit } from "./fraud";
 
 /** Audit-log actions written by the messaging repository. */
 export const MESSAGING_AUDIT = {
@@ -273,6 +274,9 @@ export class MessagingRepository {
 
     return this.#db.$transaction(async (tx) => {
       const thread = await this.#participatingThread(tx, threadId);
+      // Fraud control: sliding-window cap per acting org, counted atomically
+      // with acceptance so rolled-back posts never consume budget.
+      await enforceRateLimit(tx, "messages", this.#auth.orgId);
       const kind: MessageKind = hasAttachments ? "FILE" : "TEXT";
       if (!USER_MESSAGE_KINDS.includes(kind)) {
         throw new MessagingError(`message kind ${kind} is reserved for the platform`);

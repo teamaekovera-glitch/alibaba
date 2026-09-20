@@ -7,5 +7,6 @@
 export * from "./messaging-repository";
 export * from "./dispute-machine";
 export * from "./disputes-repository";
+export * from "./fraud";
 export * from "./review-machine";
 export * from "./reviews-repository";
