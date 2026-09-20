@@ -76,7 +76,9 @@ describe("deterministic fictional seed", () => {
 
     expect(first.supplierOrgs).toBe(150);
     expect(first.buyerOrgs).toBe(40);
-    expect(first.listings).toBe(1200);
+    // 1,200 market listings plus two workflow listings (DRAFT + PENDING_REVIEW)
+    // per supplier for the supplier console
+    expect(first.listings).toBe(1500);
     expect(first.users).toBe(40);
     expect(first.categories).toBe(flattenTaxonomy().length);
     expect(first.orders).toBe(60);
@@ -119,7 +121,7 @@ describe("deterministic fictional seed", () => {
       prisma.listing.count({ where: { id: { startsWith: "seed_" } } }),
       prisma.listing.count({ where: { id: { startsWith: "seed_" }, seedIsFictional: false } }),
     ]);
-    expect(total).toBe(1200);
+    expect(total).toBe(1500);
     expect(nonFictional).toBe(0);
   });
 
@@ -135,7 +137,7 @@ describe("deterministic fictional seed", () => {
       list.push({ minQty: tier.minQty, unitPriceCents: tier.unitPriceCents });
       byListing.set(tier.listingId, list);
     }
-    expect(byListing.size).toBe(1200);
+    expect(byListing.size).toBe(1500);
     for (const ladder of byListing.values()) {
       expect(ladder.length).toBeGreaterThanOrEqual(2);
       for (let t = 1; t < ladder.length; t += 1) {
@@ -175,6 +177,6 @@ describe("deterministic fictional seed", () => {
     expect(secondHash).toBe(firstHash);
     // Wipe-and-recreate leaves no duplicate accumulations behind.
     expect(await prisma.organization.count({ where: { id: { startsWith: "seed_" } } })).toBe(190);
-    expect(await prisma.listing.count({ where: { id: { startsWith: "seed_" } } })).toBe(1200);
+    expect(await prisma.listing.count({ where: { id: { startsWith: "seed_" } } })).toBe(1500);
   });
 });

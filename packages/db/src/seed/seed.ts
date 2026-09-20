@@ -414,13 +414,22 @@ export async function seedDatabase(client: PrismaClient): Promise<SeedSummary> {
         updatedAt: new Date(SEED_EPOCH + (LISTING_COUNT + s) * 60_000 + w * 60_000),
       });
 
-      moqTierRows.push({
-        id: `${SEED_PREFIX}moq_wf_${pad(s + 1, 3)}_${workflow.suffix}`,
-        listingId,
-        orgId: supplierOrgId,
-        minQty: MOQ_LADDER[0] ?? 500,
-        unitPriceCents: CATEGORY_BASE_PRICE_CENTS[topSlug] ?? 40,
-      });
+      // Two-tier descending ladder so every seeded listing satisfies the
+      // documented invariant that listings carry a descending MOQ ladder.
+      for (let t = 0; t < 2; t += 1) {
+        const minQty = MOQ_LADDER[t];
+        if (minQty === undefined) throw new Error(`MOQ ladder underflow at tier ${t}`);
+        moqTierRows.push({
+          id: `${SEED_PREFIX}moq_wf_${pad(s + 1, 3)}_${workflow.suffix}_${t}`,
+          listingId,
+          orgId: supplierOrgId,
+          minQty,
+          unitPriceCents: Math.max(
+            1,
+            Math.round((CATEGORY_BASE_PRICE_CENTS[topSlug] ?? 40) * (1 - 0.08 * t)),
+          ),
+        });
+      }
 
       leadTimeRows.push({
         id: `${SEED_PREFIX}lead_wf_${pad(s + 1, 3)}_${workflow.suffix}`,

@@ -81,6 +81,11 @@ beforeAll(() => {
 }, 30_000);
 
 afterAll(async () => {
+  // Leave the shared database clean for the next serialized suite: every
+  // integration file seeds itself, so an empty migrated schema is the
+  // neutral handoff state (plain-id fixture rows would otherwise survive
+  // the seed's seed_-prefixed wipe and collide on Category.slug).
+  await prisma.$executeRawUnsafe(`TRUNCATE TABLE "Organization", "User", "AuditLog", "Category" CASCADE`);
   await prisma.$disconnect();
 });
 
@@ -286,7 +291,7 @@ describe("spec-sheet extraction flow", () => {
     // withdrawal returns the listing to the supplier for review + confirmation
     await repoA.withdraw(listing.id);
     await repoA.applySpecSuggestions(listing.id, sheet.id);
-    expect((await auditActions(listing.id)).at(-2)).toBe("listing.spec_sheet.apply");
+    expect((await auditActions(listing.id)).at(-1)).toBe("listing.spec_sheet.apply");
 
     await repoA.confirmSpecSheet(listing.id, sheet.id);
     current = await repoA.listing(listing.id);
@@ -309,19 +314,21 @@ describe("bulk CSV import", () => {
     const repoA = repo(salesA);
     const attributesJson = JSON.stringify(generateListingAttributes(mulberry32(13), SLUG));
     const header =
-      "title,categorySlug,attributes_json,moq_1_minQty,moq_1_unitPriceCents,lead_1_qtyMin,lead_1_productionDays";
+      "title,categorySlug,attributes_json,moq_1_minQty,moq_1_unitPriceCents,moq_2_minQty,moq_2_unitPriceCents,lead_1_qtyMin,lead_1_productionDays";
+    // RFC-4180: embedded quotes (the JSON column) are doubled inside the field
+    const csvField = (value: string) => `"${value.replace(/"/g, '""')}"`;
     const validRow = (title: string) =>
-      [`"${title}"`, `"${SLUG}"`, `"${attributesJson}"`, "500", "42", "500", "10"].join(",");
+      [csvField(title), csvField(SLUG), csvField(attributesJson), "500", "42", "1000", "39", "500", "10"].join(",");
     const csv = [
       header,
       validRow("Imported bottle A"),
       validRow("Imported bottle B"),
       // malformed: unparseable attributes JSON
-      [`"Broken attributes row"`, `"${SLUG}"`, `"not json"`, "500", "42", "500", "10"].join(","),
+      [csvField("Broken attributes row"), csvField(SLUG), csvField("not json"), "500", "42", "1000", "39", "500", "10"].join(","),
       // shape-valid but repository-invalid: unknown category
-      [`"Broken category row"`, `"no-such-category"`, `"${attributesJson}"`, "500", "42", "500", "10"].join(","),
+      [csvField("Broken category row"), csvField("no-such-category"), csvField(attributesJson), "500", "42", "1000", "39", "500", "10"].join(","),
       // malformed: title too short
-      [`"No"`, `"${SLUG}"`, `"${attributesJson}"`, "500", "42", "500", "10"].join(","),
+      [csvField("No"), csvField(SLUG), csvField(attributesJson), "500", "42", "1000", "39", "500", "10"].join(","),
     ].join("\n");
 
     const report = await importListingsCsv(repoA, csv);
