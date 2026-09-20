@@ -2,7 +2,8 @@
   "name": "@packsource/db",
   "private": true,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./seed": "./src/seed/seed.ts"
   },
   "scripts": {
     "postinstall": "prisma generate",
