@@ -5,10 +5,12 @@ import {
   IllegalRfqTransitionError,
   InvalidQuoteError,
   InvalidRfqError,
+  InvalidRfqSpecError,
   LandedCostError,
   PermissionDeniedError,
   QuoteExpiredError,
   RecordNotFoundError,
+  type RfqDestination,
 } from "@packsource/core";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -26,6 +28,7 @@ const DOMAIN_ERRORS = [
   PermissionDeniedError,
   RecordNotFoundError,
   InvalidRfqError,
+  InvalidRfqSpecError,
   IllegalRfqTransitionError,
   InvalidQuoteError,
   IllegalQuoteTransitionError,
@@ -92,6 +95,23 @@ function dollarsToCents(form: FormData, key: string): number | null {
   return dollars * 100 + cents;
 }
 
+/**
+ * "Austin, TX 78701" -> { city, state, country, postalCode } per the spec
+ * envelope's structured destination. The lean form captures one free-text
+ * line; unparsable text is rejected (never silently dropped) since the
+ * envelope's destination shape cannot be built from it.
+ */
+function parseDestination(raw: string | null): RfqDestination | undefined {
+  if (!raw || !raw.trim()) {
+    return undefined;
+  }
+  const match = /^(.+?),\s*([A-Za-z]{2})\s+(\d{5})(?:-\d{4})?$/.exec(raw.trim());
+  if (!match?.[1] || !match[2] || !match[3]) {
+    throw new InvalidRfqSpecError('destination must look like "Austin, TX 78701"');
+  }
+  return { city: match[1].trim(), state: match[2].toUpperCase(), country: "US", postalCode: match[3] };
+}
+
 function isoDate(form: FormData, key: string): Date | null {
   const value = str(form, key);
   if (!value) {
@@ -113,7 +133,7 @@ export async function createRfqAction(_prev: ActionState, form: FormData): Promi
       throw new InvalidRfqError("RFQ mode must be BROADCAST, AUCTION, or SINGLE");
     }
     const needBy = isoDate(form, "needBy");
-    const destination = optional(form, "destination");
+    const destination = parseDestination(optional(form, "destination"));
     const created = await rfq.create({
       mode,
       title: str(form, "title"),
@@ -123,8 +143,9 @@ export async function createRfqAction(_prev: ActionState, form: FormData): Promi
       quantity: str(form, "quantity") ? requiredInt(form, "quantity") : undefined,
       closesAt: isoDate(form, "closesAt") ?? undefined,
       spec: {
-        destination: destination ?? undefined,
-        needBy: needBy ? needBy.toISOString().slice(0, 10) : undefined,
+        version: 1,
+        destination,
+        needByDate: needBy ? needBy.toISOString().slice(0, 10) : undefined,
       },
       lines: [
         {
