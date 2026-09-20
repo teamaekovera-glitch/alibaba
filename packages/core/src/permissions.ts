@@ -103,6 +103,7 @@ export const PERMISSION_MATRIX: Record<Role, readonly Permission[]> = {
     "catalog:search",
     "workspace:manage",
     "rfq:create",
+    "rfq:manage",
     "cart:manage",
     "order:create",
     "sample:order",
