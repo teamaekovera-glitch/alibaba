@@ -1100,6 +1100,7 @@ model OrderLine {
   listing          Listing?        @relation(fields: [listingId], references: [id])
   listingVariantId String?
   listingVariant   ListingVariant? @relation(fields: [listingVariantId], references: [id])
+  review           Review?
   description      String
   quantity         Int
   unitPriceCents   Int
@@ -1400,6 +1401,11 @@ model Review {
   listing                 Listing?     @relation(fields: [listingId], references: [id])
   orderId                 String
   order                   Order        @relation(fields: [orderId], references: [id])
+  // Verified-purchase anchor: the exact order line being reviewed. Unique
+  // (nullable) — one review per order-line (spec), supplier-level reviews
+  // without a line stay possible.
+  orderLineId             String?      @unique
+  orderLine               OrderLine?   @relation(fields: [orderLineId], references: [id])
   qualityRating           Int
   communicationRating     Int
   onTimeRating            Int

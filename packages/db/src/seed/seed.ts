@@ -596,6 +596,10 @@ export async function seedDatabase(client: PrismaClient): Promise<SeedSummary> {
       supplierResponse:
         r % 5 === 0 ? "Thanks for the detailed feedback — glad the run met spec." : null,
       supplierRespondedAt: r % 5 === 0 ? new Date(createdAt.getTime() + 86_400_000) : null,
+      // Historical seeded reviews went through moderation; only fresh
+      // buyer-submitted reviews land PENDING.
+      moderationStatus: "PUBLISHED",
+      moderatedAt: createdAt,
       createdAt,
       updatedAt: createdAt,
     };
