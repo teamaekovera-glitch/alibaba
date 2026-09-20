@@ -2,32 +2,50 @@ import { defineConfig } from "@playwright/test";
 import path from "node:path";
 
 /**
- * Minimal Playwright setup for the supplier-onboarding wizard e2e test.
- * Zero API keys: AUTH_SECRET gets a deterministic test value, mail is the
- * mock adapter, payments/storage mocks are wired in apps/web.
+ * E2E configuration.
  *
- * Requires DATABASE_URL pointing at a disposable Postgres with pgvector
- * (CI's pgvector job provides one; locally: docker compose up -d db).
+ * Local (default): the suite boots the dev server — the only mode where the
+ * dev-inbox magic-link flow exists (production hard-404s /api/dev/inbox by
+ * design).
+ *
+ * CI (E2E_PRODUCTION_SERVER=1): the job has already built the app, so the
+ * suite boots the production build (`next start`) and tests the real
+ * artifact; the dev-inbox-only test skips itself.
+ *
+ * Zero API keys: adapters stay on their deterministic mocks (MOCK=true).
+ * Single worker, zero retries — determinism over convenience.
  */
+const productionServer = process.env.E2E_PRODUCTION_SERVER === "1";
+
 export default defineConfig({
   testDir: "./tests/e2e",
+  timeout: 120_000,
   fullyParallel: false,
   workers: 1,
   retries: 0,
+  reporter: process.env.CI ? [["list"], ["html", { outputFolder: "../../playwright-report", open: "never" }]] : "list",
   use: {
-    baseURL: "http://127.0.0.1:3100",
+    // All browser traffic uses localhost — Auth.js normalizes its sign-in
+    // redirect to the localhost origin, and 127.0.0.1 is a different cookie
+    // origin, so the session would never stick if the two were mixed.
+    baseURL: "http://localhost:3100",
     trace: "retain-on-failure",
+  },
+  expect: {
+    timeout: 20_000,
   },
   globalSetup: path.join(__dirname, "tests/e2e/global-setup.ts"),
   webServer: {
-    command: "pnpm dev --port 3100",
+    command: productionServer ? "pnpm start --port 3100" : "pnpm dev --port 3100",
     url: "http://127.0.0.1:3100/health",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
       ...process.env,
       AUTH_SECRET: "e2e-test-secret-not-for-production",
-      NODE_ENV: "development",
+      MOCK: "true",
+      // Only pin NODE_ENV for the dev server; `next start` sets production itself.
+      ...(productionServer ? {} : { NODE_ENV: "development" }),
     },
   },
 });

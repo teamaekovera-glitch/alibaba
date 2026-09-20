@@ -106,3 +106,88 @@ jobs:
 
       - name: Integration suites (passWithNoTests until suites land)
         run: pnpm test:integration
+
+  e2e:
+    # Closing-PR deliverable: the full Playwright suite over the deterministic
+    # seed. Same readiness-gate pattern as the integration job (PR #12), a
+    # dedicated database so the two jobs never share rows, and the production
+    # build as the tested artifact (E2E_PRODUCTION_SERVER=1 switches the
+    # Playwright webServer to `next start`; the dev-inbox magic-link test
+    # self-skips because that route is dev-only by design). Zero API keys —
+    # MOCK=true keeps every external adapter on its deterministic mock.
+    name: e2e (Playwright, production build)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: packsource
+          POSTGRES_PASSWORD: packsource
+          POSTGRES_DB: packsource_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U packsource -d packsource_e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://packsource:packsource@localhost:5432/packsource_e2e
+      E2E_PRODUCTION_SERVER: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Wait for Postgres readiness
+        run: |
+          for attempt in $(seq 1 30); do
+            if psql "$DATABASE_URL" -c 'SELECT 1;' >/dev/null 2>&1; then
+              echo "Postgres ready after ${attempt} attempt(s)."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Postgres not ready after 30 attempts (~60s)."
+          exit 1
+
+      - name: Verify pgvector extension availability
+        run: |
+          psql "$DATABASE_URL" -c 'CREATE EXTENSION IF NOT EXISTS vector;'
+          psql "$DATABASE_URL" -c 'SELECT extname FROM pg_extension;' | grep -q vector
+
+      - name: Apply Prisma migrations
+        run: pnpm --filter @packsource/db exec prisma migrate deploy
+
+      - name: Run deterministic fictional seed
+        # Recreated identically on every run (fixed ids, seed_* wipes) — the
+        # specs' fixed fixtures (seed-listing-0001, seed-buyer-01, …) depend
+        # on this exactness.
+        run: pnpm --filter @packsource/db seed
+
+      - name: Build the app (production artifact under test)
+        run: pnpm --filter @packsource/web build
+
+      - name: Install Playwright browsers
+        run: pnpm --filter @packsource/web exec playwright install --with-deps chromium
+
+      - name: Run Playwright e2e suite
+        run: pnpm --filter @packsource/web test:e2e
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure-artifacts
+          path: |
+            apps/web/test-results/
+            playwright-report/
+          retention-days: 7
