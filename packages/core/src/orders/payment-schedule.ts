@@ -26,7 +26,7 @@ export class InvalidScheduleError extends Error {
 export interface PaymentPlanItem {
   kind: PaymentKind;
   amountCents: number;
-  dueAt: Date | null;
+  dueAt: Date;
 }
 
 /**

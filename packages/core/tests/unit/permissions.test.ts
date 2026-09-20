@@ -78,6 +78,7 @@ const EXPECTED_GRANTS: Record<Role, string[]> = {
     "moderation:manage",
     "dispute:mediate",
     "placement:manage",
+    "payout:settle",
     "analytics:view",
     "message:send",
   ],

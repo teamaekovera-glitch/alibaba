@@ -51,6 +51,7 @@ export const PERMISSIONS = [
   "moderation:manage",
   "dispute:mediate",
   "placement:manage",
+  "payout:settle",
   // Shared
   "analytics:view",
   "message:send",
@@ -130,6 +131,7 @@ export const PERMISSION_MATRIX: Record<Role, readonly Permission[]> = {
     "moderation:manage",
     "dispute:mediate",
     "placement:manage",
+    "payout:settle",
     "analytics:view",
     "message:send",
   ],
