@@ -4,8 +4,9 @@ export default defineConfig({
   test: {
     include: ["tests/integration/**/*.test.ts"],
     passWithNoTests: true,
-    // Suites share one Postgres database and truncate it in beforeAll —
-    // run test files sequentially (same pattern as packages/db).
+    // All suites share one pgvector service; serialize files so a suite's
+    // migrate/truncate setup cannot race another suite's assertions
+    // (same contract as the db package's integration config).
     fileParallelism: false,
   },
 });
