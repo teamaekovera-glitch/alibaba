@@ -115,7 +115,7 @@ export class OrderRepository {
       where: { id: orderId },
       include: {
         orderLines: true,
-        subOrders: true,
+        subOrders: { include: { shipments: true } },
         payments: { orderBy: { createdAt: "asc" } },
         invoices: { orderBy: { createdAt: "asc" } },
         payouts: { orderBy: { createdAt: "asc" } },
@@ -151,6 +151,18 @@ export class OrderRepository {
       where: { subOrders: { some: { orgId: this.#auth.orgId } } },
       orderBy: { createdAt: "desc" },
       include: { payments: true, subOrders: true, disputes: { where: { status: { in: ["OPEN", "UNDER_REVIEW"] } } } },
+    });
+  }
+
+  /**
+   * Payout ledger: supplier orgs see their own legs; platform staff sees
+   * everything. No other role gets payout visibility.
+   */
+  async listPayouts() {
+    this.#require("payout:view");
+    return this.#db.payout.findMany({
+      where: this.#auth.role === "AEKOVERA_STAFF" ? {} : { orgId: this.#auth.orgId },
+      orderBy: { createdAt: "desc" },
     });
   }
 
