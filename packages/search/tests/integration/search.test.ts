@@ -80,12 +80,17 @@ const index = new MockListingSearch();
 
 beforeAll(async () => {
   await prisma.$connect();
-  // CI and fresh local environments: ensure the deterministic seed exists.
-  const listingCount = await prisma.listing.count();
-  if (listingCount === 0) {
-    const { seedDatabase } = await import("@packsource/db/seed");
-    await seedDatabase(prisma);
-  }
+  // Deterministic per-suite handoff: integration suites share one database
+  // and turbo schedules their tasks in nondeterministic order, so inherited
+  // state is unsafe — a non-empty graph of stale or non-LIVE rows would
+  // defeat a count-guarded seed. Truncate the core graph (CASCADE clears
+  // every table that references these rows, mirroring the seed suite's
+  // beforeAll) and reseed unconditionally: order-independent by construction.
+  await prisma.$executeRawUnsafe(
+    `TRUNCATE TABLE "Organization", "User", "Category", "PriceBenchmark" CASCADE`,
+  );
+  const { seedDatabase } = await import("@packsource/db/seed");
+  await seedDatabase(prisma);
   documents = (await loadListingGraphs(prisma)).map((graph) =>
     listingGraphToDocument(graph, new Date()),
   );

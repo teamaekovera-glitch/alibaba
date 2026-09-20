@@ -78,6 +78,24 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Wait for Postgres readiness
+        # The service container's health-cmd gate can pass while the server is
+        # still finishing init recovery, and every step below assumes an
+        # immediately-ready database. Bounded client-side retry: a no-op when
+        # Postgres is already accepting connections (the common case), a hard
+        # failure with a clear ::error after the timeout instead of a confusing
+        # psql or prisma-migrate error mid-job.
+        run: |
+          for attempt in $(seq 1 30); do
+            if psql "$DATABASE_URL" -c 'SELECT 1;' >/dev/null 2>&1; then
+              echo "Postgres ready after ${attempt} attempt(s)."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Postgres not ready after 30 attempts (~60s)."
+          exit 1
+
       - name: Verify pgvector extension availability
         run: |
           psql "$DATABASE_URL" -c 'CREATE EXTENSION IF NOT EXISTS vector;'
