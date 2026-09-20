@@ -172,6 +172,11 @@ export function listingGraphToDocument(
 
   const volumeMl = typeof attributes["volumeMl"] === "number" ? attributes["volumeMl"] : null;
   const description = listing.description ?? "";
+  // [{ url, alt?, position }] JSON column; first entry is the primary card image.
+  const primaryImageUrl = Array.isArray(listing.images)
+    ? ((listing.images as { url?: unknown }[]).find((image) => typeof image?.url === "string")
+        ?.url ?? null)
+    : null;
 
   return {
     id: listing.id,
@@ -203,6 +208,7 @@ export function listingGraphToDocument(
     verificationRank: verificationRank(profile?.verificationStatus ?? "UNVERIFIED"),
     featured: activePlacements.length > 0,
     booleanFlags: booleanFlagsOf(attributes),
+    primaryImageUrl,
     seedIsFictional: listing.seedIsFictional,
     updatedAt: listing.updatedAt.toISOString(),
   };
