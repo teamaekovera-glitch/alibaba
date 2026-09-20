@@ -16,3 +16,4 @@ export * from "./create-search";
 export * from "./postgres-fallback";
 export * from "./discovery";
 export * from "./semantic";
+export * from "./visual";
