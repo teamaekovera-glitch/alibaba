@@ -221,7 +221,7 @@ export class NegotiationRepository {
         },
       });
 
-      await tx.quote.update({
+      const supersededHead = await tx.quote.update({
         where: { id: head.id },
         data: { status: nextChild },
       });
@@ -255,7 +255,7 @@ export class NegotiationRepository {
           entityId: revision.id,
         },
       });
-      return { revision, head, message };
+      return { revision, head: supersededHead, message };
     });
   }
 

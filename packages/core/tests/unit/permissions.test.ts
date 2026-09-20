@@ -47,6 +47,7 @@ const EXPECTED_GRANTS: Record<Role, string[]> = {
     "catalog:search",
     "workspace:manage",
     "rfq:create",
+    "rfq:manage",
     "cart:manage",
     "order:create",
     "sample:order",

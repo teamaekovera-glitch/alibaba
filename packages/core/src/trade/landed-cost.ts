@@ -53,11 +53,12 @@ export class LandedCostError extends Error {
 }
 
 /**
- * Resolve the tier price for a quantity: the price of the highest tier whose
- * minimum quantity is at or below it. Throws when the quantity is below the
- * first tier — a quote below MOQ is not a quote.
+ * The tier applicable at `quantity` — the highest minimum at or below it.
+ * Throws when the quantity is below the first tier — a quote below MOQ is
+ * not a quote. Shared by price resolution and quote-fee adaptation so both
+ * follow one selection rule.
  */
-export function tierPrice(tiers: MoqTier[], quantity: number): number {
+export function selectedTier<T extends { minQty: number }>(tiers: T[], quantity: number): T {
   if (!Number.isInteger(quantity) || quantity <= 0) {
     throw new LandedCostError(`quantity must be a positive integer, got ${quantity}`);
   }
@@ -65,7 +66,7 @@ export function tierPrice(tiers: MoqTier[], quantity: number): number {
     throw new LandedCostError("quote has no price tiers");
   }
   const sorted = [...tiers].sort((a, b) => a.minQty - b.minQty);
-  let resolved: MoqTier | undefined;
+  let resolved: T | undefined;
   for (const tier of sorted) {
     if (tier.minQty <= quantity) {
       resolved = tier;
@@ -79,6 +80,12 @@ export function tierPrice(tiers: MoqTier[], quantity: number): number {
       `quantity ${quantity} is below the first MOQ tier (minQty ${first ? first.minQty : "?"})`,
     );
   }
+  return resolved;
+}
+
+/** The unit price of the tier applicable at `quantity`. */
+export function tierPrice(tiers: MoqTier[], quantity: number): number {
+  const resolved = selectedTier(tiers, quantity);
   if (!Number.isInteger(resolved.unitPriceCents) || resolved.unitPriceCents < 0) {
     throw new LandedCostError(`tier at minQty ${resolved.minQty} has an invalid unit price`);
   }
@@ -114,9 +121,11 @@ export function computeLandedCost(q: QuoteCostComponents): LandedCost {
 
 /**
  * Build components from a persisted Quote row: the price ladder comes from
- * the quote's lines (each line is one tier step — minQty = line quantity),
- * one-time fees and freight roll up from the lines. When a quote has no
- * lines the head money stands alone as a single-tier offer.
+ * the quote's lines (submit enforces unique tier quantities, so each line IS
+ * one tier step), and the one-time fees and freight that apply are the
+ * selected step's — summing across steps would bill the 5,000-unit freight
+ * on a 1,200-unit order. When a quote has no lines the head money stands
+ * alone as a single-tier offer.
  */
 export function landedCostComponentsFromQuote(quote: {
   quantity: number;
@@ -143,16 +152,19 @@ export function landedCostComponentsFromQuote(quote: {
       dutyBps: quote.dutyBps,
     };
   }
-  const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
+  const selected = selectedTier(
+    quote.lines.map((line) => ({ ...line, minQty: line.quantity })),
+    quote.quantity,
+  );
   return {
     quantity: quote.quantity,
     moqTiers: quote.lines.map((line) => ({
       minQty: line.quantity,
       unitPriceCents: line.unitPriceCents,
     })),
-    toolingCents: sum(quote.lines.map((line) => line.toolingCents)),
-    plateChargesCents: sum(quote.lines.map((line) => line.plateChargesCents)),
-    freightCents: sum(quote.lines.map((line) => line.freightCents)),
+    toolingCents: selected.toolingCents,
+    plateChargesCents: selected.plateChargesCents,
+    freightCents: selected.freightCents,
     dutyBps: quote.dutyBps,
   };
 }
