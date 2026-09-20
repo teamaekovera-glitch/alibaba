@@ -5,7 +5,7 @@
  * the clock passed in, so the 7-day auto-release and Net-30 due dates are
  * deterministic — no wall-time flakiness, zero API keys.
  */
-import { MockPaymentsAdapter, MockStorageAdapter } from "@packsource/ai";
+import { MockPaymentsAdapter, MockStorageAdapter, MockTrackingAdapter } from "@packsource/ai";
 import type { PrismaClient } from "@packsource/db";
 import type { AuthContext } from "../repositories";
 import { OrderRepository } from "./order-repository";
@@ -24,7 +24,11 @@ function systemOrderRepository(db: PrismaClient): OrderRepository {
   return new OrderRepository(
     db,
     SYSTEM_ACTOR,
-    { payments: new MockPaymentsAdapter(), storage: new MockStorageAdapter() },
+    {
+      payments: new MockPaymentsAdapter(),
+      tracking: new MockTrackingAdapter(),
+      storage: new MockStorageAdapter(),
+    },
     { system: true },
   );
 }

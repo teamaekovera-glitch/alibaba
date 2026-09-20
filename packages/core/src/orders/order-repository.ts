@@ -13,7 +13,7 @@ import { EscrowError, commissionSplit, escrowBalance, escrowKeys, releaseDecisio
 import { assertNet30Approved, balancePlan, net30DueAt, upfrontPlan } from "./payment-schedule";
 import { renderInvoiceDocument, surchargesFromOrder } from "./invoice-document";
 import { orderTransition, type OrderSnapshot } from "./order-machine";
-import type { OrderPaymentsPort, OrderStoragePort } from "./ports";
+import type { OrderPaymentsPort, OrderStoragePort, OrderTrackingPort } from "./ports";
 
 /** Audit action names for the order lifecycle (AuditLog is append-only). */
 export const ORDER_AUDIT = {
@@ -56,6 +56,7 @@ export class OrderRepository {
   readonly #db: PrismaClient;
   readonly #auth: AuthContext;
   readonly #payments: OrderPaymentsPort;
+  readonly #tracking: OrderTrackingPort;
   readonly #storage: OrderStoragePort;
   /** System mode: background jobs acting as the platform, not a role. */
   readonly #system: boolean;
@@ -63,12 +64,13 @@ export class OrderRepository {
   constructor(
     db: PrismaClient,
     auth: AuthContext,
-    ports: { payments: OrderPaymentsPort; storage: OrderStoragePort },
+    ports: { payments: OrderPaymentsPort; tracking: OrderTrackingPort; storage: OrderStoragePort },
     options: { system?: boolean } = {},
   ) {
     this.#db = db;
     this.#auth = auth;
     this.#payments = ports.payments;
+    this.#tracking = ports.tracking;
     this.#storage = ports.storage;
     this.#system = options.system ?? false;
   }
@@ -506,17 +508,23 @@ export class OrderRepository {
     });
   }
 
-  /** Supplier creates the shipment record (tracking to follow). */
+  /**
+   * Supplier creates the shipment record. Without an explicit tracking
+   * number, the tracking adapter mints a deterministic carrier code and the
+   * adapter shipment id is kept in easypostShipmentId for later lookups.
+   */
   async createShipment(orderId: string, input: { carrier: string; trackingNumber?: string; subOrderId?: string }) {
     this.#require("shipment:manage");
     return this.#db.$transaction(async (tx) => {
       const { order, subOrder } = await this.#loadSupplierLeg(tx, orderId, input.subOrderId);
+      const carrierShipment = await this.#tracking.createShipment({ carrier: input.carrier });
       const shipment = await tx.shipment.create({
         data: {
           subOrderId: subOrder.id,
           orgId: subOrder.orgId,
           carrier: input.carrier,
-          trackingNumber: input.trackingNumber,
+          trackingNumber: input.trackingNumber ?? carrierShipment.trackingCode,
+          easypostShipmentId: carrierShipment.id,
         },
       });
       await this.#audit(tx, ORDER_AUDIT.shipmentCreated, "Shipment", shipment.id, input.carrier);
@@ -569,9 +577,16 @@ export class OrderRepository {
         where: { orderId: order.id, status: { in: ["OPEN", "UNDER_REVIEW"] } },
       });
       await this.#transition(tx, order, payments, disputes?.id ?? null, { type: "DELIVER", at });
+      // Proof of delivery through the storage mock (deterministic content).
+      const podKey = `pods/${shipment.id}/pod.txt`;
+      await this.#storage.put(
+        podKey,
+        `Proof of delivery — shipment ${shipment.id}\nOrder ${order.id}\nDelivered ${at.toISOString()}\nCarrier ${shipment.carrier ?? "unknown"} · tracking ${shipment.trackingNumber ?? "n/a"}\n`,
+        "text/plain",
+      );
       await tx.shipment.update({
         where: { id: shipmentId },
-        data: { status: "DELIVERED", deliveredAt: at },
+        data: { status: "DELIVERED", deliveredAt: at, podFileId: podKey },
       });
       await tx.subOrder.update({ where: { id: subOrder.id }, data: { status: "DELIVERED" } });
       await this.#audit(tx, ORDER_AUDIT.shipmentDelivered, "Shipment", shipmentId);
@@ -907,6 +922,37 @@ export class OrderRepository {
       throw new RecordNotFoundError("Invoice PDF", invoiceId);
     }
     return this.#storage.signedUrl(invoice.pdfFileId);
+  }
+
+  /**
+   * Shipment tracking timeline: the shipment row's lifecycle (created →
+   * in-transit → delivered with timestamps) plus the carrier's events from
+   * the tracking adapter. Org-scoped via the order read guard.
+   */
+  async getShipmentTimeline(orderId: string, shipmentId: string) {
+    // Org-scope guard: getOrder throws for cross-org reads.
+    await this.getOrder(orderId);
+    const shipment = await this.#db.shipment.findFirst({
+      where: { id: shipmentId, subOrder: { orderId } },
+    });
+    if (!shipment) {
+      throw new RecordNotFoundError("Shipment", shipmentId);
+    }
+    const carrier =
+      shipment.trackingNumber != null ? await this.#tracking.track(shipment.trackingNumber) : undefined;
+    return {
+      id: shipment.id,
+      status: shipment.status,
+      carrier: shipment.carrier,
+      trackingNumber: shipment.trackingNumber,
+      proofOfDeliveryFileId: shipment.podFileId,
+      milestones: [
+        { label: "Label created", at: shipment.createdAt },
+        ...(shipment.shippedAt ? [{ label: "In transit", at: shipment.shippedAt }] : []),
+        ...(shipment.deliveredAt ? [{ label: "Delivered", at: shipment.deliveredAt }] : []),
+      ],
+      carrierEvents: carrier?.events ?? [],
+    };
   }
 
   // ── helpers ───────────────────────────────────────────────────────────────

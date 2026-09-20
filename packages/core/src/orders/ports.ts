@@ -5,10 +5,13 @@
  * external services sit behind typed adapters... MOCK=true is the default
  * and the only mode in build/test").
  */
-import type { PaymentsAdapter, StorageAdapter } from "@packsource/ai";
+import type { PaymentsAdapter, StorageAdapter, TrackingAdapter } from "@packsource/ai";
 
 /** Payments port — the Stripe Connect seam (separate charges and transfers). */
 export type OrderPaymentsPort = PaymentsAdapter;
+
+/** Tracking port — the EasyPost seam for carrier shipment/tracking numbers. */
+export type OrderTrackingPort = TrackingAdapter;
 
 /** Storage port — the R2 seam used for invoice PDFs. */
 export type OrderStoragePort = StorageAdapter;
@@ -16,5 +19,6 @@ export type OrderStoragePort = StorageAdapter;
 /** Everything the order workflow can call out to. */
 export interface OrderPorts {
   payments: OrderPaymentsPort;
+  tracking: OrderTrackingPort;
   storage: OrderStoragePort;
 }
