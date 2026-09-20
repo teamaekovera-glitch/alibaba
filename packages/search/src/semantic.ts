@@ -23,6 +23,15 @@ export interface SemanticMatch {
   similarity: number;
 }
 
+/**
+ * Serialize a vector into pgvector's text literal ("[0.1,0.2,...]"). Prisma
+ * serializes a JS number[] parameter as a Postgres array, which pgvector's
+ * ::vector cast rejects, so raw-SQL vectors always travel as text.
+ */
+export function vectorToPgLiteral(vector: number[]): string {
+  return `[${vector.map((value) => String(value)).join(",")}]`;
+}
+
 /** Zero-pad (or truncate) an adapter vector to the storage dimension. */
 export function padVectorToDimensions(
   vector: number[],
@@ -117,7 +126,7 @@ export async function backfillListingEmbeddings(
             (id, "listingId", "orgId", kind, model, dimensions, embedding, "textPreview", "updatedAt")
           VALUES (
             ${crypto.randomUUID()}, ${graph.id}, ${graph.orgId}, ${BACKFILL_KIND}::"EmbeddingKind",
-            ${response.model}, ${vector.length}::int, ${vector}::vector,
+            ${response.model}, ${vector.length}::int, ${vectorToPgLiteral(vector)}::vector,
             ${semanticInputText(document).slice(0, 200)}, now()
           )
           ON CONFLICT ("listingId", kind) DO UPDATE SET
@@ -150,14 +159,13 @@ export async function semanticSearchListings(
   const kind = query.kind ?? "TITLE";
   const limit = Math.min(query.limit ?? 10, 100);
 
-  // `${vector}::vector` casts the JS number array to pgvector input, matching
-  // the established raw-SQL pattern in packages/db integration tests.
+  const vectorLiteral = vectorToPgLiteral(vector);
   const rows = await prisma.$queryRaw<{ listingId: string; similarity: number }[]>`
-    SELECT le."listingId" AS "listingId", 1 - (le.embedding <=> ${vector}::vector) AS similarity
+    SELECT le."listingId" AS "listingId", 1 - (le.embedding <=> ${vectorLiteral}::vector) AS similarity
     FROM "ListingEmbedding" le
     JOIN "Listing" l ON l.id = le."listingId"
     WHERE le.kind = ${kind}::"EmbeddingKind" AND l.status = 'LIVE'::"ListingStatus"
-    ORDER BY le.embedding <=> ${vector}::vector
+    ORDER BY le.embedding <=> ${vectorLiteral}::vector
     LIMIT ${limit}::int`;
 
   return rows.map((row) => ({ listingId: row.listingId, similarity: Number(row.similarity) }));
