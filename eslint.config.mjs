@@ -19,6 +19,17 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   prettier,
   {
+    // React 19 no-input server actions legitimately take params they never
+    // read (useActionState always passes (prevState, formData)) — the `_`
+    // prefix marks them intentionally unused.
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_" },
+      ],
+    },
+  },
+  {
     files: ["apps/web/**/*.{ts,tsx}"],
     plugins: {
       "@next/next": nextPlugin,

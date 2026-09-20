@@ -393,6 +393,7 @@ model Organization {
   webhookDeliveries      WebhookDelivery[]
   cartItems              CartItem[]
   disputeEvidences       DisputeEvidence[]
+  notifications          Notification[]
 
   @@index([type, slug])
 }
@@ -423,7 +424,9 @@ model User {
   approvalsDecided         ApprovalRequest[] @relation("ApprovalDecider")
   disputesOpened           Dispute[]         @relation("DisputeOpener")
   disputesResolved         Dispute[]         @relation("DisputeResolver")
+  reviewModerations        Review[]          @relation("ReviewModerator")
   verifiedSupplierProfiles SupplierProfile[] @relation("SupplierVerifier")
+  notifications            Notification[]
 }
 
 model OrgMembership {
@@ -1358,6 +1361,14 @@ model MessageAttachment {
 }
 
 // Verified-purchase-only (orderId is required); four structured rating axes.
+// Review moderation pipeline (spec: "Reviews" — verified purchases land in
+// moderation; staff publish or reject; only PUBLISHED reviews are public).
+enum ReviewModerationStatus {
+  PENDING
+  PUBLISHED
+  REJECTED
+}
+
 model Review {
   id                      String       @id @default(cuid())
   orgId                   String // reviewer (buyer org)
@@ -1378,6 +1389,11 @@ model Review {
   body                    String?
   supplierResponse        String?
   supplierRespondedAt     DateTime?
+  moderationStatus        ReviewModerationStatus @default(PENDING)
+  moderatedAt             DateTime?
+  moderatedByUserId       String?
+  moderatedBy             User?        @relation("ReviewModerator", fields: [moderatedByUserId], references: [id])
+  rejectionReason         String?
   createdAt               DateTime     @default(now())
   updatedAt               DateTime     @updatedAt
 
@@ -1385,6 +1401,7 @@ model Review {
 
   @@index([supplierOrgId])
   @@index([listingId])
+  @@index([moderationStatus, createdAt])
 }
 
 model ReviewPhoto {
@@ -1668,4 +1685,41 @@ model WebhookDelivery {
   updatedAt      DateTime              @updatedAt
 
   @@index([direction, status, createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notifications
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Kinds the notification engine emits (spec: staff admin + reminders). Every
+// send (in-app and email) is audited through the append-only AuditLog.
+enum NotificationKind {
+  REORDER_REMINDER
+  DISPUTE_OPENED
+  DISPUTE_RESOLVED
+  REVIEW_MODERATION_DECIDED
+  VERIFICATION_CHANGED
+  ORG_ROLE_CHANGED
+}
+
+// A per-user notification row: the in-app center reads these; the email leg
+// is recorded in the AuditLog (action "notification.sent") rather than a
+// second table — the audit log is the durable delivery record, mock-first.
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id])
+  orgId      String // the org whose data the notification is about
+  org        Organization     @relation(fields: [orgId], references: [id])
+  kind       NotificationKind
+  title      String
+  body       String?
+  linkUrl    String?
+  entityType String?
+  entityId   String?
+  readAt     DateTime?
+  createdAt  DateTime         @default(now())
+
+  @@index([userId, readAt])
+  @@index([userId, createdAt])
 }

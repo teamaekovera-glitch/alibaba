@@ -76,6 +76,7 @@ const EXPECTED_GRANTS: Record<Role, string[]> = {
   // Platform — Aekovera staff run verification, moderation, disputes,
   // and placement/commission settings.
   AEKOVERA_STAFF: [
+    "admin:access",
     "supplier:verify",
     "moderation:manage",
     "dispute:mediate",
@@ -105,6 +106,14 @@ describe("permission matrix (role × action)", () => {
 describe("assertCan", () => {
   it("returns silently for a granted permission", () => {
     expect(() => assertCan("SUPPLIER_SALES", "quote:create")).not.toThrow();
+  });
+
+  it("gates the staff console to Aekovera staff only", () => {
+    // The admin console layout checks this permission before rendering any
+    // staff surface; no supplier or buyer role may hold it.
+    for (const role of ROLES) {
+      expect(can(role, "admin:access")).toBe(role === "AEKOVERA_STAFF");
+    }
   });
 
   it("throws PermissionDeniedError with role and permission attached", () => {

@@ -14,6 +14,10 @@ export default defineConfig({
   test: {
     include: ["tests/integration/**/*.test.ts"],
     passWithNoTests: true,
+    // All suites share one pgvector service and truncate/reseed in beforeAll —
+    // serialize files so one suite's truncate cannot race another's assertions
+    // (same contract as the core and db packages' integration configs).
+    fileParallelism: false,
     // The storefront suite's beforeAll truncates and reseeds the full
     // deterministic corpus (same handoff contract as the search package's
     // integration config) — far beyond Vitest's 10s/5s defaults on CI runners.

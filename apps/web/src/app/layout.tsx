@@ -28,6 +28,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <Link href="/search" className="text-sm text-neutral-600 hover:text-neutral-900">
               Search
             </Link>
+            <Link href="/notifications" className="text-sm text-neutral-600 hover:text-neutral-900">
+              Notifications
+            </Link>
             <Link href="/search/visual" className="text-sm text-neutral-600 hover:text-neutral-900">
               Visual search
             </Link>

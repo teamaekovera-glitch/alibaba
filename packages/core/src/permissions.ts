@@ -48,6 +48,7 @@ export const PERMISSIONS = [
   "shipment:manage",
   "payout:view",
   // Platform staff
+  "admin:access",
   "supplier:verify",
   "moderation:manage",
   "dispute:mediate",
@@ -130,6 +131,7 @@ export const PERMISSION_MATRIX: Record<Role, readonly Permission[]> = {
     "message:send",
   ],
   AEKOVERA_STAFF: [
+    "admin:access",
     "supplier:verify",
     "moderation:manage",
     "dispute:mediate",
