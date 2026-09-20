@@ -1,0 +1,242 @@
+/**
+ * Dispute lifecycle (spec: "Disputes" — buyer opens with reason/evidence,
+ * supplier responds, staff resolves). Opening and resolution (with refunds
+ * and the escrow handoff) live in OrderRepository via the order machine;
+ * this repository owns the discussion layer between those bookends:
+ * supplier/buyer responses, evidence attachments, staff review transition,
+ * buyer withdrawal, and participant-scoped reads. Every mutation is
+ * validated by the pure dispute machine and audited.
+ */
+import { Prisma, type PrismaClient } from "@packsource/db";
+import { assertCan, type Permission } from "../permissions";
+import { RecordNotFoundError, type AuthContext } from "../repositories";
+import { redactContactInfo } from "../trade/redaction";
+import { disputeTransition, type DisputeEvent } from "./dispute-machine";
+
+/** Audit-log actions written by the disputes repository. */
+export const DISPUTES_AUDIT = {
+  respond: "dispute.respond",
+  evidence: "dispute.evidence",
+  startReview: "dispute.start_review",
+  withdraw: "dispute.withdraw",
+} as const;
+
+/** Business-rule violation inside the disputes domain (rendered as form copy). */
+export class DisputeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "DisputeError";
+  }
+}
+
+export interface DisputeResponseView {
+  id: string;
+  orgId: string;
+  orgName: string;
+  authorUserId: string;
+  authorName: string;
+  body: string;
+  createdAt: Date;
+}
+
+export class DisputesRepository {
+  readonly #db: PrismaClient;
+  readonly #auth: AuthContext;
+
+  constructor(db: PrismaClient, auth: AuthContext) {
+    this.#db = db;
+    this.#auth = auth;
+  }
+
+  #require(permission: Permission): void {
+    assertCan(this.#auth.role, permission);
+  }
+
+  async #audit(
+    tx: Prisma.TransactionClient,
+    action: string,
+    entityType: string,
+    entityId: string,
+    note?: string,
+  ): Promise<void> {
+    await tx.auditLog.create({
+      data: {
+        orgId: this.#auth.orgId,
+        actorUserId: this.#auth.userId,
+        actorType: "user",
+        action,
+        entityType,
+        entityId,
+        ...(note !== undefined ? { note } : {}),
+      },
+    });
+  }
+
+  /** The dispute plus the order's supplier legs; participant-guarded. */
+  async #participatingDispute(tx: Prisma.TransactionClient | PrismaClient, disputeId: string) {
+    const dispute = await tx.dispute.findUnique({
+      where: { id: disputeId },
+      include: { order: { include: { subOrders: { select: { orgId: true } } } } },
+    });
+    if (!dispute) {
+      throw new RecordNotFoundError("Dispute", disputeId);
+    }
+    const isBuyer = dispute.orgId === this.#auth.orgId;
+    const isSupplier = dispute.order.subOrders.some((sub) => sub.orgId === this.#auth.orgId);
+    const isStaff = this.#auth.role === "AEKOVERA_STAFF";
+    if (!isBuyer && !isSupplier && !isStaff) {
+      throw new DisputeError(`organization ${this.#auth.orgId} is not a participant in dispute ${disputeId}`);
+    }
+    return { dispute, isBuyer, isSupplier, isStaff };
+  }
+
+  /** Apply a machine event to a dispute row inside a transaction. */
+  async #transition(
+    tx: Prisma.TransactionClient,
+    disputeId: string,
+    event: DisputeEvent,
+    audit: { action: string; note?: string },
+  ) {
+    const dispute = await tx.dispute.findUnique({ where: { id: disputeId } });
+    if (!dispute) {
+      throw new RecordNotFoundError("Dispute", disputeId);
+    }
+    const plan = disputeTransition(dispute, event);
+    if (plan.length === 0) {
+      throw new DisputeError(`dispute ${disputeId} in status ${dispute.status} does not accept ${event.type}`);
+    }
+    const final = plan[plan.length - 1]!;
+    const updated = await tx.dispute.update({
+      where: { id: disputeId },
+      data: { status: final.to },
+    });
+    await this.#audit(tx, audit.action, "Dispute", disputeId, audit.note);
+    return { dispute: updated, selfLoop: final.from === final.to };
+  }
+
+  /** Append a discussion response (buyer opener, supplier side, or staff). */
+  async respond(disputeId: string, body: string): Promise<DisputeResponseView> {
+    this.#require("order:create");
+    if (!body.trim()) {
+      throw new DisputeError("write a response first");
+    }
+    return this.#db.$transaction(async (tx) => {
+      await this.#participatingDispute(tx, disputeId);
+      const [author, org] = await Promise.all([
+        tx.user.findUnique({ where: { id: this.#auth.userId }, select: { name: true } }),
+        tx.organization.findUnique({ where: { id: this.#auth.orgId }, select: { name: true } }),
+      ]);
+      const response = await tx.disputeResponse.create({
+        data: {
+          disputeId,
+          orgId: this.#auth.orgId,
+          authorUserId: this.#auth.userId,
+          body: redactContactInfo(body),
+        },
+      });
+      await this.#transition(tx, disputeId, { type: "RESPOND", at: new Date() }, {
+        action: DISPUTES_AUDIT.respond,
+        note: `by org ${this.#auth.orgId}`,
+      });
+      return {
+        id: response.id,
+        orgId: this.#auth.orgId,
+        orgName: org?.name ?? "organization",
+        authorUserId: this.#auth.userId,
+        authorName: author?.name ?? "member",
+        body: response.body,
+        createdAt: response.createdAt,
+      };
+    });
+  }
+
+  /** Attach an evidence file (buyer opener or staff) to an active dispute. */
+  async attachEvidence(disputeId: string, input: { fileId: string; note?: string }) {
+    this.#require("order:create");
+    return this.#db.$transaction(async (tx) => {
+      const { dispute, isBuyer, isStaff } = await this.#participatingDispute(tx, disputeId);
+      if (!isBuyer && !isStaff) {
+        throw new DisputeError("only the disputing buyer or staff may attach evidence");
+      }
+      const evidence = await tx.disputeEvidence.create({
+        data: {
+          disputeId: dispute.id,
+          orgId: this.#auth.orgId,
+          fileId: input.fileId,
+          note: input.note ?? null,
+          uploadedByUserId: this.#auth.userId,
+        },
+      });
+      await this.#transition(tx, disputeId, { type: "ATTACH_EVIDENCE", at: new Date() }, {
+        action: DISPUTES_AUDIT.evidence,
+        note: input.fileId,
+      });
+      return evidence;
+    });
+  }
+
+  /** Staff picks the dispute up: OPEN → UNDER_REVIEW. */
+  async startReview(disputeId: string) {
+    this.#require("dispute:mediate");
+    return this.#db.$transaction(async (tx) => {
+      await this.#participatingDispute(tx, disputeId);
+      const { dispute } = await this.#transition(tx, disputeId, { type: "START_REVIEW", at: new Date() }, {
+        action: DISPUTES_AUDIT.startReview,
+      });
+      return dispute;
+    });
+  }
+
+  /** Buyer withdraws an active dispute; escrow resumes via the release sweep. */
+  async withdraw(disputeId: string) {
+    this.#require("order:create");
+    return this.#db.$transaction(async (tx) => {
+      const { isBuyer, isStaff } = await this.#participatingDispute(tx, disputeId);
+      if (!isBuyer && !isStaff) {
+        throw new DisputeError("only the disputing buyer may withdraw");
+      }
+      const { dispute } = await this.#transition(tx, disputeId, { type: "WITHDRAW", at: new Date() }, {
+        action: DISPUTES_AUDIT.withdraw,
+      });
+      return dispute;
+    });
+  }
+
+  /** Participant view: dispute + evidence + response trail, oldest first. */
+  async disputeDetail(disputeId: string) {
+    const { dispute } = await this.#participatingDispute(this.#db, disputeId);
+    const [evidence, responses] = await Promise.all([
+      this.#db.disputeEvidence.findMany({ where: { disputeId }, orderBy: { createdAt: "asc" } }),
+      this.#db.disputeResponse.findMany({
+        where: { disputeId },
+        orderBy: { createdAt: "asc" },
+        include: {
+          org: { select: { name: true } },
+          authorUser: { select: { name: true } },
+        },
+      }),
+    ]);
+    return {
+      dispute,
+      evidence,
+      responses: responses.map((row) => ({
+        id: row.id,
+        orgId: row.orgId,
+        orgName: row.org.name,
+        authorUserId: row.authorUserId,
+        authorName: row.authorUser.name ?? "member",
+        body: row.body,
+        createdAt: row.createdAt,
+      })) satisfies DisputeResponseView[],
+    };
+  }
+
+  /** The acting org's disputes (buyer side), newest first. */
+  async listForOrg() {
+    return this.#db.dispute.findMany({
+      where: { orgId: this.#auth.orgId },
+      orderBy: { createdAt: "desc" },
+      include: { order: { select: { id: true, status: true } } },
+    });
+  }
+}

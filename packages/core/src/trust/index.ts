@@ -5,5 +5,7 @@
  * (rate limits, duplicate-review detection) that guard them.
  */
 export * from "./messaging-repository";
+export * from "./dispute-machine";
+export * from "./disputes-repository";
 export * from "./review-machine";
 export * from "./reviews-repository";

@@ -378,6 +378,7 @@ model Organization {
   reviewPhotos           ReviewPhoto[]
   fraudFlags             FraudFlag[]
   rateLimitEvents        RateLimitEvent[]
+  disputeResponses       DisputeResponse[]
   savedLists             SavedList[]
   savedListItems         SavedListItem[]
   projectBoards          ProjectBoard[]
@@ -425,6 +426,7 @@ model User {
   approvalsDecided         ApprovalRequest[] @relation("ApprovalDecider")
   disputesOpened           Dispute[]         @relation("DisputeOpener")
   disputesResolved         Dispute[]         @relation("DisputeResolver")
+  disputeResponses         DisputeResponse[]
   reviewModerations        Review[]          @relation("ReviewModerator")
   verifiedSupplierProfiles SupplierProfile[] @relation("SupplierVerifier")
   notifications            Notification[]
@@ -1276,6 +1278,7 @@ model Dispute {
   updatedAt        DateTime        @updatedAt
 
   evidence DisputeEvidence[]
+  responses DisputeResponse[]
 
   @@index([orderId])
   @@index([status, createdAt])
@@ -1293,6 +1296,23 @@ model DisputeEvidence {
   createdAt        DateTime     @default(now())
 
   @@index([disputeId])
+}
+
+// Discussion trail on a dispute (spec: "buyer opens with reason/evidence,
+// supplier responds, staff resolves"). Rows are append-only; the dispute
+// state machine (trust/dispute-machine) decides which statuses accept them.
+model DisputeResponse {
+  id           String       @id @default(cuid())
+  disputeId    String
+  dispute      Dispute      @relation(fields: [disputeId], references: [id])
+  orgId        String // responding org (buyer, supplier, or platform)
+  org          Organization @relation(fields: [orgId], references: [id])
+  authorUserId String
+  authorUser   User         @relation(fields: [authorUserId], references: [id])
+  body         String
+  createdAt    DateTime     @default(now())
+
+  @@index([disputeId, createdAt])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
