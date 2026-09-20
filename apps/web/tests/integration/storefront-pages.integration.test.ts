@@ -50,13 +50,18 @@ describe("buyer storefront pages against the seed", () => {
   beforeAll(async () => {
     const { PrismaClient: Client } = await import("@packsource/db");
     prisma = new Client({ datasources: { db: { url: DATABASE_URL } } });
-    // Deterministic corpus for CI and fresh local environments: ensure the
-    // seed exists before rendering against it.
-    const listingCount = await prisma.listing.count();
-    if (listingCount === 0) {
-      const { seedDatabase } = await import("@packsource/db/seed");
-      await seedDatabase(prisma);
-    }
+    // Deterministic per-suite handoff: integration suites share one database
+    // and turbo schedules their tasks in nondeterministic order, so inherited
+    // state is unsafe — a non-empty graph of stale or non-LIVE rows would
+    // defeat a count-guarded seed (observed in CI as a dirty handoff from
+    // sibling suites). Truncate the core graph (CASCADE clears every table
+    // that references these rows, mirroring the seed suite's beforeAll) and
+    // reseed unconditionally: order-independent by construction.
+    await prisma.$executeRawUnsafe(
+      `TRUNCATE TABLE "Organization", "User", "Category", "PriceBenchmark" CASCADE`,
+    );
+    const { seedDatabase } = await import("@packsource/db/seed");
+    await seedDatabase(prisma);
     return async () => {
       await prisma.$disconnect();
     };

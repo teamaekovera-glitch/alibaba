@@ -14,5 +14,10 @@ export default defineConfig({
   test: {
     include: ["tests/integration/**/*.test.ts"],
     passWithNoTests: true,
+    // The storefront suite's beforeAll truncates and reseeds the full
+    // deterministic corpus (same handoff contract as the search package's
+    // integration config) — far beyond Vitest's 10s/5s defaults on CI runners.
+    hookTimeout: 300_000,
+    testTimeout: 300_000,
   },
 });
