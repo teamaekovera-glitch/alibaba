@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@packsource/ai": "workspace:*",
+    "@packsource/benchmarks": "workspace:*",
     "@packsource/core": "workspace:*",
     "@packsource/db": "workspace:*",
     "@packsource/notifications": "workspace:*",
