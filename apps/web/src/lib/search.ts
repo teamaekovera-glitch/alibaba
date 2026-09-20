@@ -32,10 +32,14 @@ export function ensureSearchIndexSynced(): Promise<void> {
   if (!usingMockBackend) {
     return Promise.resolve();
   }
-  globalForSearch.searchIndexBootstrap ??= syncAllListings(db, searchIndex).catch((error) => {
-    console.error("[search] mock index warm-up failed — will retry on next discovery call", error);
-    globalForSearch.searchIndexBootstrap = undefined;
-    throw error;
-  });
-  return globalForSearch.searchIndexBootstrap;
+  // syncAllListings resolves to a sync count; callers only need completion, so
+  // the cached promise is normalized to Promise<void>.
+  const bootstrap = (globalForSearch.searchIndexBootstrap ??= syncAllListings(db, searchIndex)
+    .then(() => undefined)
+    .catch((error) => {
+      console.error("[search] mock index warm-up failed — will retry on next discovery call", error);
+      globalForSearch.searchIndexBootstrap = undefined;
+      throw error;
+    }));
+  return bootstrap;
 }

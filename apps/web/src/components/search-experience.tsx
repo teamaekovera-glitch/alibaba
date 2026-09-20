@@ -186,7 +186,7 @@ export function SearchExperience() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8" data-testid="search-experience">
-      <DemoDataBanner surface="buyer storefront search" />
+      <DemoDataBanner />
 
       <form onSubmit={submitQuery} className="flex gap-2" data-testid="search-form">
         <input

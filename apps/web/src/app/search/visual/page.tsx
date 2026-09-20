@@ -69,7 +69,7 @@ export default function VisualSearchPage() {
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8" data-testid="visual-search-page">
-      <DemoDataBanner surface="buyer storefront visual search" />
+      <DemoDataBanner />
       <h1 className="text-xl font-semibold text-neutral-900">Search by image</h1>
       <p className="mt-1 text-sm text-neutral-500">
         Upload a photo of the packaging you need — we find visually similar listings.

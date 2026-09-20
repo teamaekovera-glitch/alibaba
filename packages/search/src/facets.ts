@@ -79,6 +79,8 @@ export type FacetSourceListing = {
   slug: string;
   description: string | null;
   attributes: unknown; // Prisma Json — validated per category at write time
+  /** [{ url, alt?, position }] — first entry becomes primaryImageUrl. */
+  images: unknown;
   seedIsFictional: boolean;
   updatedAt: Date;
   category: { slug: string; parent: { slug: string } | null };
@@ -173,10 +175,9 @@ export function listingGraphToDocument(
   const volumeMl = typeof attributes["volumeMl"] === "number" ? attributes["volumeMl"] : null;
   const description = listing.description ?? "";
   // [{ url, alt?, position }] JSON column; first entry is the primary card image.
-  const primaryImageUrl = Array.isArray(listing.images)
-    ? ((listing.images as { url?: unknown }[]).find((image) => typeof image?.url === "string")
-        ?.url ?? null)
-    : null;
+  const images = Array.isArray(listing.images) ? (listing.images as { url?: unknown }[]) : [];
+  const primaryImageUrl =
+    images.find((image): image is { url: string } => typeof image?.url === "string")?.url ?? null;
 
   return {
     id: listing.id,

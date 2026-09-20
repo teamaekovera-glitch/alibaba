@@ -29,3 +29,10 @@ export async function documentsForListings(
     }),
   );
 }
+
+/** Deterministic storage key for a visual-search upload (mock storage keeps
+ * uploads in memory; the key is the audit-trail identity). */
+export function visualUploadKey(base64: string, mimeType: string): string {
+  const extension = mimeType.split("/")[1] ?? "bin";
+  return `visual-search-uploads/${base64.length}-${extension}`;
+}

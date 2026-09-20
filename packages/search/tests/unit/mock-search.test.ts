@@ -28,6 +28,7 @@ function doc(overrides: Partial<ListingSearchDocument>): ListingSearchDocument {
     verificationRank: 3,
     featured: false,
     booleanFlags: ["hotFillCapable"],
+    primaryImageUrl: null,
     seedIsFictional: true,
     updatedAt: "2026-01-01T00:00:00.000Z",
     ...overrides,
