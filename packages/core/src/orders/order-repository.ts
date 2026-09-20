@@ -6,7 +6,7 @@
  * idempotency key. Cross-org access is refused; buyer, supplier, and staff
  * routes are permission-gated.
  */
-import { Prisma, type PrismaClient, type EscrowEntryKind } from "@packsource/db";
+import { Prisma, type PrismaClient, type EscrowEntryKind, type OrderStatus, type PaymentSchedule } from "@packsource/db";
 import { assertCan, type Permission } from "../permissions";
 import { RecordNotFoundError, type AuthContext } from "../repositories";
 import { EscrowError, commissionSplit, escrowBalance, escrowKeys, releaseDecision } from "./escrow";
@@ -245,9 +245,11 @@ export class OrderRepository {
       }
 
       // Machine first: PLACE routes by schedule (NET_30 skips deposit legs).
+      // Patch the in-memory row before the machine reads it — the schedule
+      // must drive the routing decision, not lag it by one update.
       const updated = await this.#transition(
         tx,
-        order,
+        { ...order, paymentSchedule: input.paymentSchedule },
         [],
         null,
         { type: "PLACE", at },
@@ -551,10 +553,10 @@ export class OrderRepository {
    */
   async markShipmentInTransit(shipmentId: string, at: Date = new Date()) {
     this.#require("shipment:manage");
-    return this.#db.$transaction(async (tx) => {
+    const result = await this.#db.$transaction(async (tx) => {
       const { shipment, subOrder } = await this.#loadShipment(tx, shipmentId);
       if (shipment.status === "IN_TRANSIT" || shipment.status === "DELIVERED") {
-        return shipment; // idempotent replay
+        return { idempotentReplay: true as const, orderId: subOrder.orderId, orderStatus: "SHIPPED" as OrderStatus, schedule: "FULL_PREPAY" as PaymentSchedule };
       }
       const order = await this.#loadForUpdate(tx, subOrder.orderId);
       const payments = await tx.payment.findMany({ where: { orderId: order.id, status: "SUCCEEDED" } });
@@ -568,8 +570,15 @@ export class OrderRepository {
       });
       await tx.subOrder.update({ where: { id: subOrder.id }, data: { status: "SHIPPED" } });
       await this.#audit(tx, ORDER_AUDIT.shipmentInTransit, "Shipment", shipmentId);
-      return { ...marked, orderStatus: updated.status };
+      return { ...marked, orderStatus: updated.status, orderId: order.id, schedule: order.paymentSchedule };
     });
+    // Net-30 is invoiced at shipment (spec: "Net-30 invoicing at shipment,
+    // charged off-session on the due date") — issue the receivable after the
+    // shipping transaction commits; issuance is its own idempotent tx.
+    if (result.schedule === "NET_30" && result.orderStatus === "SHIPPED") {
+      await this.issueBalanceInvoice(result.orderId, at);
+    }
+    return result;
   }
 
   /**
@@ -828,7 +837,29 @@ export class OrderRepository {
         if (resolution.amountCents <= 0 || resolution.amountCents > paid) {
           throw new EscrowError(`partial refund ${resolution.amountCents}c exceeds captured ${paid}c`);
         }
-        await this.#refundPaymentRow(tx, order, payments[0]?.id ?? null, resolution.amountCents, resolution.reason, at, disputeId);
+        // Distribute the partial refund across captured charges in capture
+        // order — no single charge may hold the whole amount. Portion keys
+        // stay per-dispute unique so replays are no-ops.
+        let refundRemaining = resolution.amountCents;
+        let refundIndex = 0;
+        for (const payment of payments) {
+          if (refundRemaining <= 0) {
+            break;
+          }
+          const portion = Math.min(refundRemaining, payment.amountCents);
+          await this.#refundPaymentRow(
+            tx,
+            order,
+            payment.id,
+            portion,
+            resolution.reason,
+            at,
+            disputeId,
+            refundIndex > 0 ? String(refundIndex) : undefined,
+          );
+          refundRemaining -= portion;
+          refundIndex += 1;
+        }
         await this.#issueInvoice(
           tx,
           order,
@@ -889,14 +920,52 @@ export class OrderRepository {
       const supplierOrgId = sub?.orgId ?? payout.orgId;
       const profile = await tx.supplierProfile.findUnique({ where: { orgId: supplierOrgId } });
       const connectedAccountId = profile?.stripeConnectAccountId ?? `acct_mock_${supplierOrgId}`;
-      const transfer = await this.#payments.transferToConnectedAccount({
-        chargeId: `charge_mock_${payout.orderId}`,
-        connectedAccountId,
-        amountCents: payout.netCents,
+      // Transfers draw against the charges actually captured for this order
+      // (mock Connect held-funds discipline): distribute the payout across
+      // them in capture order — a 30/70 payout spans the deposit and balance
+      // charges. Transfer ids are external state; only the first is recorded
+      // on the payout row.
+      const succeeded = await tx.payment.findMany({
+        where: { orderId: payout.orderId, status: "SUCCEEDED" },
+        orderBy: { createdAt: "asc" },
       });
+      let remaining = payout.netCents;
+      let firstTransferId: string | null = null;
+      for (const payment of succeeded) {
+        if (remaining <= 0) {
+          break;
+        }
+        const chargeId = payment.stripePaymentIntentId;
+        if (!chargeId) {
+          continue;
+        }
+        const charge = await this.#payments.getCharge(chargeId);
+        if (!charge) {
+          continue;
+        }
+        const held = charge.amountCents - charge.transferredCents - charge.refundedCents;
+        const portion = Math.min(held, remaining);
+        if (portion <= 0) {
+          continue;
+        }
+        const transfer = await this.#payments.transferToConnectedAccount({
+          chargeId,
+          connectedAccountId,
+          amountCents: portion,
+        });
+        if (!firstTransferId) {
+          firstTransferId = transfer.id;
+        }
+        remaining -= portion;
+      }
+      if (remaining > 0) {
+        throw new OrderWorkflowError(
+          `insufficient_held_funds: payout ${payoutId} needs ${payout.netCents}c, charges held ${payout.netCents - remaining}c`,
+        );
+      }
       const settled = await tx.payout.update({
         where: { id: payoutId },
-        data: { status: "PAID", paidAt: at, stripeTransferId: transfer.id },
+        data: { status: "PAID", paidAt: at, stripeTransferId: firstTransferId },
       });
       await this.#audit(tx, ORDER_AUDIT.payoutSettled, "Payout", payoutId, `${payout.netCents}c`);
       return settled;
@@ -1162,6 +1231,7 @@ export class OrderRepository {
     reason: string,
     at: Date,
     disputeId?: string,
+    keySuffix?: string,
   ) {
     if (!paymentId) {
       throw new EscrowError("cannot refund without a captured payment");
@@ -1170,14 +1240,19 @@ export class OrderRepository {
     if (!payment || payment.status !== "SUCCEEDED") {
       throw new OrderWorkflowError(`payment ${paymentId} is not refundable`);
     }
-    const idempotencyKey = disputeId
-      ? escrowKeys.partialRefund(order.id, disputeId)
-      : escrowKeys.refund(order.id, paymentId);
+    const baseKey = disputeId ? escrowKeys.partialRefund(order.id, disputeId) : escrowKeys.refund(order.id, paymentId);
+    const idempotencyKey = keySuffix ? `${baseKey}:${keySuffix}` : baseKey;
     const existing = await tx.refund.findUnique({ where: { idempotencyKey } });
     if (existing) {
       return existing; // replay
     }
-    const mock = await this.#payments.refundCharge(`charge_mock_${order.id}`, amountCents);
+    // Refund the actual captured charge — the adapter ledger refuses refunds
+    // beyond a charge's held funds, so amounts must respect per-payment caps.
+    const chargeId = payment.stripePaymentIntentId;
+    if (!chargeId) {
+      throw new EscrowError(`payment ${paymentId} has no captured charge to refund`);
+    }
+    const mock = await this.#payments.refundCharge(chargeId, amountCents);
     const refund = await tx.refund.create({
       data: {
         orgId: order.orgId,

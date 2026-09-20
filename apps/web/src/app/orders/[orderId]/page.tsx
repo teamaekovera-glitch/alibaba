@@ -11,6 +11,7 @@ import {
   ConfirmOrderForm,
   CreateShipmentForm,
   DownloadInvoiceButton,
+  IssueBalanceInvoiceButton,
   MarkInTransitButton,
   OpenDisputeForm,
   PayPaymentButton,
@@ -227,9 +228,24 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
             <CompleteProductionButton orderId={order.id} />
           </div>
         ) : null}
+        {order.status === "BALANCE_DUE" && isSupplier ? (
+          <div className="mb-4 max-w-md">
+            <p className="mb-2 text-xs text-neutral-500">Balance paid — create the shipment to hand off to the carrier.</p>
+            <CreateShipmentForm orderId={order.id} />
+          </div>
+        ) : null}
         {order.status === "READY_TO_SHIP" && isSupplier ? (
           <div className="mb-4 max-w-md">
-            <CreateShipmentForm orderId={order.id} />
+            {order.paymentSchedule === "DEPOSIT_30_70" ? (
+              <>
+                <p className="mb-2 text-xs text-neutral-500">
+                  Issue the balance invoice (70%) — the order can ship once the buyer pays it.
+                </p>
+                <IssueBalanceInvoiceButton orderId={order.id} />
+              </>
+            ) : (
+              <CreateShipmentForm orderId={order.id} />
+            )}
           </div>
         ) : null}
         {shipments.length === 0 ? (
