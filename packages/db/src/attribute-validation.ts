@@ -157,3 +157,72 @@ export function validateAttributesForCategory(categorySlug: string, values: unkn
   if (!result.success) throw result.error;
   return result.data;
 }
+
+// ── Partial validation (RFQ specs) ───────────────────────────────────────────
+
+/**
+ * Builds a strict-but-optional schema from an attribute-set document: known
+ * keys validate against their definitions, every key is optional. RFQ specs
+ * are wishes, not listings — a buyer may specify only the attributes they
+ * care about — but unknown keys are still rejected so matching overlap stays
+ * comparable (spec: "attribute values rejected when violating a category's
+ * attribute set").
+ */
+export function buildPartialAttributeSchema(
+  attributeSet: unknown,
+): z.ZodType<Record<string, unknown>> {
+  const set = parseAttributeSet(attributeSet);
+  const shape: Record<string, z.ZodTypeAny> = {};
+  for (const definition of set.attributes) {
+    shape[definition.key] = schemaForAttribute(definition).optional();
+  }
+  return z.object(shape).strict() as z.ZodType<Record<string, unknown>>;
+}
+
+export type PartialAttributeValidationResult =
+  | { success: true; data: Record<string, unknown> }
+  | { success: false; error: AttributeValidationError };
+
+/** Validate a subset of attribute values against an attribute-set document. */
+export function safeValidatePartialAttributes(
+  attributeSet: unknown,
+  values: unknown,
+): PartialAttributeValidationResult {
+  const schema = buildPartialAttributeSchema(attributeSet);
+  const result = schema.safeParse(values);
+  if (result.success) {
+    return { success: true, data: result.data as Record<string, unknown> };
+  }
+  return { success: false, error: new AttributeValidationError(result.error.issues) };
+}
+
+/**
+ * Validate a subset of attribute values against the packaged taxonomy by
+ * category slug. Throws for unknown category slugs (taxonomy is code-owned).
+ */
+export function validatePartialAttributesForCategory(
+  categorySlug: string,
+  values: unknown,
+): Record<string, unknown> {
+  const attributeSet = attributeSetForSlug(categorySlug);
+  if (!attributeSet) {
+    throw new Error(`Unknown category slug: ${categorySlug}`);
+  }
+  const result = safeValidatePartialAttributes(attributeSet, values);
+  if (!result.success) throw result.error;
+  return result.data;
+}
+
+/**
+ * Validate a single attribute value against one attribute definition.
+ * Used by suggestion pipelines (spec extraction) that assemble values
+ * incrementally and need per-field checks before a full-set parse.
+ */
+export function safeValidateSingleAttribute(
+  definition: AttributeDefinition,
+  value: unknown,
+): AttributeValidationResult {
+  return safeValidateAttributes({ attributes: [definition] } as unknown, {
+    [definition.key]: value,
+  });
+}
