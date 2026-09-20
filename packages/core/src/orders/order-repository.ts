@@ -56,19 +56,28 @@ export class OrderRepository {
   readonly #auth: AuthContext;
   readonly #payments: OrderPaymentsPort;
   readonly #storage: OrderStoragePort;
+  /** System mode: background jobs acting as the platform, not a role. */
+  readonly #system: boolean;
 
   constructor(
     db: PrismaClient,
     auth: AuthContext,
     ports: { payments: OrderPaymentsPort; storage: OrderStoragePort },
+    options: { system?: boolean } = {},
   ) {
     this.#db = db;
     this.#auth = auth;
     this.#payments = ports.payments;
     this.#storage = ports.storage;
+    this.#system = options.system ?? false;
   }
 
   #require(permission: Permission): void {
+    // System jobs are the platform operating its own ledger, not a role —
+    // user-facing permission gates do not apply to them.
+    if (this.#system) {
+      return;
+    }
     assertCan(this.#auth.role, permission);
   }
 
@@ -78,12 +87,15 @@ export class OrderRepository {
     entityType: string,
     entityId: string,
     note?: string,
+    orgId?: string,
   ): Promise<void> {
     await tx.auditLog.create({
       data: {
-        orgId: this.#auth.orgId,
-        actorUserId: this.#auth.userId,
-        actorType: "user",
+        // System audits belong to the record's org (RFQ close precedent);
+        // user audits belong to the acting org.
+        orgId: orgId ?? this.#auth.orgId,
+        actorUserId: this.#system ? null : this.#auth.userId,
+        actorType: this.#system ? "system" : "user",
         action,
         entityType,
         entityId,
@@ -167,6 +179,7 @@ export class OrderRepository {
     openDisputeId: string | null,
     event: Parameters<typeof orderTransition>[1],
     extraData?: Prisma.OrderUpdateInput,
+    auditOrgId?: string,
   ): Promise<OrderRow> {
     const snapshot = this.#snapshot(order, payments, openDisputeId);
     const [plan] = orderTransition(snapshot, event);
@@ -190,7 +203,7 @@ export class OrderRepository {
       data: { status: plan.to, ...timestampData, ...extraData },
       include: { subOrders: true, orderLines: true },
     });
-    await this.#audit(tx, event.type, "Order", order.id, `${order.status} -> ${plan.to}`);
+    await this.#audit(tx, event.type, "Order", order.id, `${order.status} -> ${plan.to}`, auditOrgId);
     return updated;
   }
 
@@ -300,10 +313,11 @@ export class OrderRepository {
       const openDisputeId = disputes?.id ?? null;
 
       // Deposit legs move the machine; balance/full legs only settle money.
+      const auditOrg = this.#system ? order.orgId : undefined;
       const movesMachine =
         (payment.kind === "DEPOSIT" || payment.kind === "FULL") && order.status === "DEPOSIT_DUE";
       const current = movesMachine
-        ? await this.#transition(tx, order, [payment], openDisputeId, { type: "PAY_DEPOSIT", at })
+        ? await this.#transition(tx, order, [payment], openDisputeId, { type: "PAY_DEPOSIT", at }, undefined, auditOrg)
         : order;
 
       // Mock capture (deterministic; zero API keys). Failure is recorded,
@@ -321,7 +335,7 @@ export class OrderRepository {
           where: { id: paymentId },
           data: { status: "FAILED", failureReason: error instanceof Error ? error.message : "capture failed" },
         });
-        await this.#audit(tx, ORDER_AUDIT.paymentFailed, "Payment", paymentId);
+        await this.#audit(tx, ORDER_AUDIT.paymentFailed, "Payment", paymentId, undefined, auditOrg);
         throw error;
       }
 
@@ -329,7 +343,7 @@ export class OrderRepository {
         where: { id: paymentId },
         data: { status: "SUCCEEDED", paidAt: at, stripePaymentIntentId: succeeded.id },
       });
-      await this.#audit(tx, ORDER_AUDIT.paymentCaptured, "Payment", paymentId, `${payment.amountCents}c`);
+      await this.#audit(tx, ORDER_AUDIT.paymentCaptured, "Payment", paymentId, `${payment.amountCents}c`, auditOrg);
 
       // Escrow hold — platform-held funds (spec: "Funds are captured at
       // checkout to the platform's Stripe account").
@@ -348,13 +362,13 @@ export class OrderRepository {
           where: { id: payment.invoiceId },
           data: { status: "PAID", paidAt: at },
         });
-        await this.#audit(tx, ORDER_AUDIT.invoicePaid, "Invoice", payment.invoiceId);
+        await this.#audit(tx, ORDER_AUDIT.invoicePaid, "Invoice", payment.invoiceId, undefined, auditOrg);
       }
 
       // Balance legs mark the machine's balancePaid via the payments query;
       // audit the schedule for Net-30 receivables.
       if (payment.kind === "BALANCE") {
-        await this.#audit(tx, ORDER_AUDIT.balanceIssued, "Order", current.id, "balance paid");
+        await this.#audit(tx, ORDER_AUDIT.balanceIssued, "Order", current.id, "balance paid", auditOrg);
       }
       return captured;
     });
@@ -606,12 +620,21 @@ export class OrderRepository {
 
       // Auto path: the 7-day window converts SHIPPED into DELIVERED first
       // (deterministic — the sweep passes `at`).
+      const auditOrg = this.#system ? order.orgId : undefined;
       let current = order;
       if (current.status === "SHIPPED") {
-        current = await this.#transition(tx, current, payments, null, { type: "DELIVER", at });
+        current = await this.#transition(tx, current, payments, null, { type: "DELIVER", at }, undefined, auditOrg);
       }
       if (current.status === "DELIVERED") {
-        current = await this.#transition(tx, current, payments, null, { type: "RELEASE_ESCROW", at });
+        current = await this.#transition(
+          tx,
+          current,
+          payments,
+          null,
+          { type: "RELEASE_ESCROW", at },
+          undefined,
+          auditOrg,
+        );
       }
 
       const held = escrowBalance(entries.map((entry) => ({ kind: entry.kind, amountCents: entry.amountCents })));
@@ -633,7 +656,7 @@ export class OrderRepository {
         idempotencyKey: escrowKeys.commission(orderId),
         occurredAt: at,
       });
-      await this.#audit(tx, ORDER_AUDIT.escrowRelease, "Order", orderId, `${held}c via ${decision.via}`);
+      await this.#audit(tx, ORDER_AUDIT.escrowRelease, "Order", orderId, `${held}c via ${decision.via}`, auditOrg);
 
       // Payout rows per supplier leg (idempotent per leg).
       const subOrders = await tx.subOrder.findMany({ where: { orderId } });
@@ -655,7 +678,7 @@ export class OrderRepository {
               idempotencyKey: escrowKeys.payout(orderId, sub.id),
             },
           });
-          await this.#audit(tx, ORDER_AUDIT.payoutCreated, "Payout", payout.id, `${legSplit.netCents}c net`);
+          await this.#audit(tx, ORDER_AUDIT.payoutCreated, "Payout", payout.id, `${legSplit.netCents}c net`, auditOrg);
         }
       }
       return { released: true as const, via: decision.via, amountCents: held };
