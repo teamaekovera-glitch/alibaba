@@ -47,6 +47,7 @@ export default async function RfqDashboardPage() {
         <nav className="flex gap-4 text-sm">
           <Link className="underline" href="/rfq/inbox" data-testid="nav-inbox">Supplier inbox</Link>
           <Link className="underline" href="/cart" data-testid="nav-cart">Quote cart</Link>
+          <Link className="underline" href="/orders" data-testid="nav-orders">Orders</Link>
         </nav>
       </header>
 

@@ -109,6 +109,9 @@ export interface Charge {
   amountCents: number;
   currency: string;
   status: "captured" | "refunded" | "partially_refunded";
+  /** Platform-ledger discipline: held = amount − transferred − refunded. */
+  transferredCents: number;
+  refundedCents: number;
 }
 
 export interface TransferRequest {

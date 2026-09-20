@@ -3,6 +3,7 @@ import {
   MockMailAdapter,
   MockPaymentsAdapter,
   MockStorageAdapter,
+  MockTrackingAdapter,
   MockVisionAdapter,
 } from "@packsource/ai";
 
@@ -17,6 +18,7 @@ const globalForAdapters = globalThis as unknown as {
   storage?: MockStorageAdapter;
   vision?: MockVisionAdapter;
   llm?: MockLlmAdapter;
+  tracking?: MockTrackingAdapter;
 };
 
 export const mail: MockMailAdapter = globalForAdapters.mail ?? new MockMailAdapter();
@@ -28,6 +30,9 @@ export const storage: MockStorageAdapter = globalForAdapters.storage ?? new Mock
 // human-reviewable before save — nothing extracted is trusted by default.
 export const vision: MockVisionAdapter = globalForAdapters.vision ?? new MockVisionAdapter();
 export const llm: MockLlmAdapter = globalForAdapters.llm ?? new MockLlmAdapter();
+// Carrier tracking mock: deterministic tracking numbers and events behind the
+// same interface an EasyPost client will implement.
+export const tracking: MockTrackingAdapter = globalForAdapters.tracking ?? new MockTrackingAdapter();
 
 if (process.env.NODE_ENV !== "production") {
   globalForAdapters.mail = mail;
@@ -35,4 +40,5 @@ if (process.env.NODE_ENV !== "production") {
   globalForAdapters.storage = storage;
   globalForAdapters.vision = vision;
   globalForAdapters.llm = llm;
+  globalForAdapters.tracking = tracking;
 }

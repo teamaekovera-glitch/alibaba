@@ -105,6 +105,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@packsource/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@packsource/db':
         specifier: workspace:*
         version: link:../db
