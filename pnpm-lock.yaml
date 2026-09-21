@@ -185,6 +185,9 @@ importers:
         specifier: workspace:*
         version: link:../db
     devDependencies:
+      '@packsource/notifications':
+        specifier: workspace:*
+        version: link:../notifications
       '@types/node':
         specifier: ^24.0.0
         version: 24.13.6

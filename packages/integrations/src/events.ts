@@ -50,6 +50,8 @@ export const WEBHOOK_EVENTS = [
   "listing.withdraw",
   "listing.reject",
   "listing.import",
+  // PR #13 notification engine — audited send event (NOTIFICATION_AUDIT.sent).
+  "notification.sent",
 ] as const;
 
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];

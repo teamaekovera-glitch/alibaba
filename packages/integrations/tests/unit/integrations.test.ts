@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { WEBHOOK_EVENTS, isWebhookEvent } from "../../src/events";
+import { NOTIFICATION_AUDIT } from "@packsource/notifications";
 import {
   SIGNATURE_TOLERANCE_SECONDS,
   signatureHeader,
@@ -83,6 +84,14 @@ describe("webhook event catalog", () => {
     ]) {
       expect(WEBHOOK_EVENTS).toContain(event);
     }
+  });
+
+  it("stays reconciled with the notification engine's audit action (PR #13)", () => {
+    // The catalog is audit-derived 1:1; import the engine's constant instead
+    // of duplicating the string so a rename in @packsource/notifications
+    // fails this test instead of silently desyncing the catalog.
+    expect(WEBHOOK_EVENTS).toContain(NOTIFICATION_AUDIT.sent);
+    expect(isWebhookEvent(NOTIFICATION_AUDIT.sent)).toBe(true);
   });
 
   it("guards unknown events", () => {
