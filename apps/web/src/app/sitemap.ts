@@ -7,7 +7,12 @@ import { siteOrigin } from "@/lib/seo";
  * sitemap.xml: static public surfaces plus LIVE product pages and supplier
  * profiles, deterministically ordered. Auth-gated app routes are excluded —
  * robots.txt also blocks them for crawlers that ignore the sitemap.
+ *
+ * Rendered per-request: the build runner has no database, so this route must
+ * never be prerendered.
  */
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const site = siteOrigin();
   const [listings, suppliers] = await Promise.all([
