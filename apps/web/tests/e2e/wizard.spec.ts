@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { PrismaClient } from "@packsource/db";
 
 /**
  * The wizard happy path, zero API keys: a seeded supplier-ops user signs in
@@ -8,6 +9,22 @@ import { expect, test } from "@playwright/test";
  * mid-wizard lands on the same step, and a reload after submission shows
  * the locked submitted panel.
  */
+
+// Wizard progress persists on the org, so reruns against a long-lived
+// database (local dev, artifact caching) would resume past step one. Reset
+// the e2e org's onboarding state before the run — CI's fresh seed makes this
+// a no-op there.
+const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
+
+test.beforeEach(async () => {
+  await prisma.$transaction([
+    prisma.plant.deleteMany({ where: { org: { slug: "e2e-supplier" } } }),
+    prisma.capability.deleteMany({ where: { org: { slug: "e2e-supplier" } } }),
+    prisma.equipment.deleteMany({ where: { org: { slug: "e2e-supplier" } } }),
+    prisma.certification.deleteMany({ where: { org: { slug: "e2e-supplier" } } }),
+    prisma.supplierProfile.deleteMany({ where: { org: { slug: "e2e-supplier" } } }),
+  ]);
+});
 
 test("supplier completes onboarding and reaches submitted-for-review", async ({ page }) => {
   await page.goto("/sign-in");
