@@ -259,7 +259,23 @@ export class ReviewsRepository {
           rejectionReason: decision === "REJECT" ? options.reason ?? "moderation" : null,
         },
       });
-      await this.#audit(tx, REVIEWS_AUDIT.moderate, "Review", review.id, decision.toLowerCase());
+      // Audit in the moderation-queue shape the admin console consumes:
+      // before/after moderation status, one row per decision.
+      await tx.auditLog.create({
+        data: {
+          orgId: this.#auth.orgId,
+          actorUserId: this.#auth.userId,
+          actorType: "user",
+          action: REVIEWS_AUDIT.moderate,
+          entityType: "Review",
+          entityId: review.id,
+          before: { moderationStatus: review.moderationStatus } as Prisma.InputJsonValue,
+          after: {
+            moderationStatus: updated.moderationStatus,
+            reason: updated.rejectionReason,
+          } as Prisma.InputJsonValue,
+        },
+      });
       return updated;
     });
   }

@@ -1,21 +1,16 @@
 /**
  * Review moderation queue (spec: administration — review moderation PENDING →
- * PUBLISHED/REJECTED, every decision audited). The transition rule is a pure
- * function; the action writes the review update + audit row + author
- * notification (in-app + mock email) inside one transaction. The notification
- * engine is injected so tests and callers share one deterministic outbox.
+ * PUBLISHED/REJECTED, every decision audited). The state machine, review
+ * update, and audit row live in the core `ReviewsRepository`; this layer
+ * keeps the pure transition check, adds the author notification (in-app +
+ * mock email), and shares one deterministic outbox via the injected engine.
  */
-import { Prisma, type PrismaClient } from "@packsource/db";
-import { RecordNotFoundError, assertCan, type AuthContext } from "@packsource/core";
+import { type PrismaClient } from "@packsource/db";
+import { RecordNotFoundError, ReviewsRepository, assertCan, type AuthContext } from "@packsource/core";
 import type { NotificationEngine } from "@packsource/notifications";
 import { db } from "@/lib/db";
 
-export const MODERATION_AUDIT = {
-  decide: "review.moderate",
-} as const;
-
 export type ModerationDecision = "PUBLISHED" | "REJECTED";
-
 /** Decided reviews are final — only the queue's PENDING rows are actionable. */
 export class ReviewModerationStateError extends Error {
   constructor(reviewId: string, current: string) {
@@ -69,65 +64,48 @@ export async function moderateReview(
     throw new Error("moderation rejection requires a reason");
   }
 
-  return database.$transaction(async (tx) => {
-    const review = await tx.review.findUnique({
-      where: { id: input.reviewId },
-    });
-    if (!review) {
-      throw new RecordNotFoundError("Review", input.reviewId);
-    }
-    reviewModerationTransition(review.moderationStatus, input.decision);
-
-    await tx.review.update({
-      where: { id: review.id },
-      data: {
-        moderationStatus: input.decision,
-        moderatedAt: input.now,
-        moderatedByUserId: auth.userId,
-        rejectionReason: input.decision === "REJECTED" ? (input.reason?.trim() ?? null) : null,
-      },
-    });
-
-    // Append-only audit trail — one row per decision.
-    await tx.auditLog.create({
-      data: {
-        orgId: review.orgId,
-        actorUserId: auth.userId,
-        actorType: "user",
-        action: MODERATION_AUDIT.decide,
-        entityType: "Review",
-        entityId: review.id,
-        before: { moderationStatus: review.moderationStatus } as Prisma.InputJsonValue,
-        after: {
-          moderationStatus: input.decision,
-          reason: input.decision === "REJECTED" ? (input.reason?.trim() ?? null) : null,
-        } as Prisma.InputJsonValue,
-      },
-    });
-
-    // The author learns the outcome in-app and by (mock) email.
-    const sent = await notifications.notify({
-      orgId: review.orgId,
-      userIds: [review.authorUserId],
-      kind: "REVIEW_MODERATION_DECIDED",
-      title:
-        input.decision === "PUBLISHED" ? "Your review was published" : "Your review was rejected",
-      body:
-        input.decision === "REJECTED"
-          ? (input.reason?.trim() ?? "A moderator rejected this review.")
-          : "Thanks — your review is now live on the listing.",
-      linkUrl: review.orderId ? `/orders/${review.orderId}` : "/notifications",
-      entityType: "Review",
-      entityId: review.id,
-      now: input.now,
-    });
-    return {
-      reviewId: review.id,
-      moderationStatus: input.decision,
-      notificationIds: sent.notificationIds,
-      emailIds: sent.emails.map((email) => email.emailId),
-    };
+  const existing = await database.review.findUnique({
+    where: { id: input.reviewId },
   });
+  if (!existing) {
+    throw new RecordNotFoundError("Review", input.reviewId);
+  }
+  // State-error contract: decided reviews are final (throws
+  // ReviewModerationStateError before the repository's own machine check).
+  reviewModerationTransition(existing.moderationStatus, input.decision);
+
+  // Single domain transition — the core repository owns the state machine,
+  // the review update, and the before/after audit row; this layer adds the
+  // author notification so the engine stays the only notification path.
+  const reviews = new ReviewsRepository(database, auth);
+  await reviews.moderate(
+    input.reviewId,
+    input.decision === "PUBLISHED" ? "PUBLISH" : "REJECT",
+    { reason: input.reason?.trim(), at: input.now },
+  );
+
+  // The author learns the outcome in-app and by (mock) email.
+  const sent = await notifications.notify({
+    orgId: existing.orgId,
+    userIds: [existing.authorUserId],
+    kind: "REVIEW_MODERATION_DECIDED",
+    title:
+      input.decision === "PUBLISHED" ? "Your review was published" : "Your review was rejected",
+    body:
+      input.decision === "REJECTED"
+        ? (input.reason?.trim() ?? "A moderator rejected this review.")
+        : "Thanks — your review is now live on the listing.",
+    linkUrl: existing.orderId ? `/orders/${existing.orderId}` : "/notifications",
+    entityType: "Review",
+    entityId: existing.id,
+    now: input.now,
+  });
+  return {
+    reviewId: existing.id,
+    moderationStatus: input.decision,
+    notificationIds: sent.notificationIds,
+    emailIds: sent.emails.map((email) => email.emailId),
+  };
 }
 
 /**
