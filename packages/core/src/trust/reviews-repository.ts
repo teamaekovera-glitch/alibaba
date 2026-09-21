@@ -192,7 +192,7 @@ export class ReviewsRepository {
     // not-found so tenancy never leaks through error messages.
     const order = await this.#db.order.findUnique({
       where: { id: input.orderId },
-      include: { orderLines: true, subOrders: { select: { orgId: true } } },
+      include: { orderLines: true, subOrders: { select: { id: true, orgId: true } } },
     });
     if (!order || order.orgId !== this.#auth.orgId) {
       throw new RecordNotFoundError("Order", input.orderId);
@@ -212,7 +212,15 @@ export class ReviewsRepository {
     if (line?.listingId && listingId !== line.listingId) {
       throw new ReviewError(`listing ${input.listingId} does not match the ordered line`);
     }
-    const supplierOrgId = line?.orgId ?? order.subOrders[0]?.orgId ?? null;
+    // The reviewed supplier is the line's fulfillment leg. Do NOT read
+    // OrderLine.orgId here: that column holds the buying org on seeded lines
+    // but the supplier org on quote-created lines, so it is ambiguous by
+    // construction. The sub-order is the documented supplier leg (schema:
+    // SubOrder.orgId), linked from the line where the data provides it.
+    const lineSubOrder = line?.subOrderId
+      ? order.subOrders.find((sub) => sub.id === line.subOrderId)
+      : undefined;
+    const supplierOrgId = lineSubOrder?.orgId ?? order.subOrders[0]?.orgId ?? null;
     if (!supplierOrgId) {
       throw new ReviewError(`order ${order.id} has no supplier leg to review`);
     }

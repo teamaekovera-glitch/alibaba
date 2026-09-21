@@ -67,6 +67,40 @@ async function deliveredOrder(emailTag: string) {
   });
 }
 
+/**
+ * The deterministic seed stamps OrderLine.orgId with the BUYING org and links
+ * the supplier leg via subOrderId — the inverse of quote-created lines
+ * (supplier-stamped orgId, subOrderId unset). Regression: the review path
+ * resolved the supplier leg from line.orgId and rejected every seeded line
+ * with "cannot review your own organization".
+ */
+async function seedConventionOrder(emailTag: string) {
+  const order = await prisma.order.create({
+    data: {
+      orgId: buyer.org.id,
+      buyerUserId: buyer.id,
+      status: "DELIVERED",
+      paymentSchedule: "FULL_PREPAY",
+      subOrders: { create: { orgId: supplier.org.id, status: "DELIVERED" } },
+    },
+    include: { subOrders: true },
+  });
+  const line = await prisma.orderLine.create({
+    data: {
+      orderId: order.id,
+      subOrderId: order.subOrders[0]!.id,
+      // Seed convention: the line's orgId is the buying org.
+      orgId: buyer.org.id,
+      listingId,
+      description: `Kraft mailer run ${emailTag}`,
+      quantity: 1000,
+      unitPriceCents: 42,
+      totalCents: 42_000,
+    },
+  });
+  return { order, line };
+}
+
 beforeAll(() => {
   execSync("npx prisma migrate deploy", {
     cwd: dbPkgRoot,
@@ -171,6 +205,24 @@ describe("verified-purchase enforcement", () => {
       where: { action: REVIEWS_AUDIT.create, entityId: review.id },
     });
     expect(audit.actorUserId).toBe(buyer.id);
+  });
+
+  it("resolves the supplier leg from the line's sub-order when the line is buyer-stamped (seed convention)", async () => {
+    const { order, line } = await seedConventionOrder("seed-conv");
+    const review = await buyerReviews().createReview({
+      orderId: order.id,
+      orderLineId: line.id,
+      qualityRating: 4,
+      communicationRating: 5,
+      onTimeRating: 4,
+      packagingAccuracyRating: 5,
+      title: "Seeded line, verified purchase",
+    });
+
+    // The sub-order is the supplier leg — NOT line.orgId (the buying org).
+    expect(review.supplierOrgId).toBe(supplier.org.id);
+    expect(review.listingId).toBe(listingId);
+    expect(review.moderationStatus).toBe("PENDING");
   });
 
   it("denies a review on a non-delivered order", async () => {
