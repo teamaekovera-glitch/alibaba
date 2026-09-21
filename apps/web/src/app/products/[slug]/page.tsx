@@ -8,6 +8,7 @@ import { DemoDataBanner } from "@packsource/ui";
 
 import { VerificationBadge } from "@/components/verification-badge";
 import { AddToCompareButton } from "@/components/add-to-compare";
+import { loadReviewsSectionData, ReviewsSection } from "./reviews-section";
 import {
   formatLeadTimeDays,
   formatPriceCents,
@@ -115,6 +116,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     listing.category.attributeSet as Parameters<typeof attributeRows>[0],
     listing.attributes as Record<string, unknown>,
   );
+
+  const reviewsData = await loadReviewsSectionData(listing.id, listing.orgId);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8" data-testid="product-page">
@@ -349,16 +352,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </section>
       ) : null}
 
-      <section
-        className="mt-10 rounded-lg border border-dashed border-neutral-300 p-6"
-        data-testid="reviews-placeholder"
-      >
-        <h2 className="text-lg font-semibold text-neutral-900">Reviews</h2>
-        <p className="mt-2 text-sm text-neutral-500">
-          Buyer reviews arrive with the trust wave — ratings, verified orders, and dispute outcomes
-          will be summarized here.
-        </p>
-      </section>
+<ReviewsSection slug={listing.slug} {...reviewsData} />
     </div>
   );
 }

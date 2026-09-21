@@ -23,9 +23,12 @@ const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
  * (spaces, dots, dashes, parentheses), optionally with a country code.
  * Guards reject currency/quantities ("100,000", "$5.00", "12oz") by
  * requiring separator structure and forbidding letters/comma adjacency.
+ * Sentence punctuation after a candidate is allowed (a phone can end a
+ * clause: "call +1 555 010 9876.") unless the punctuation continues a
+ * number (".5", ",000").
  */
 const PHONE_RE =
-  /(?<![\w.,$#])(?:\+\d{1,3}[\s.-]?)?(?:\(\d{1,3}\)[\s.-]?|\d{2,4}[\s.-])\d{2,4}([ .-])\d{2,4}(?:\1\d{2,4})?(?![\w.,$#])/g;
+  /(?<![\w.,$#])(?:\+\d{1,3}[\s.-]?)?(?:\(\d{1,3}\)[\s.-]?|\d{2,4}[\s.-])\d{2,4}([ .-])\d{2,4}(?:\1\d{2,4})?(?![\w$#]|\.\d|,\d)/g;
 
 /**
  * Strip emails and phone numbers from free text. Runs on every negotiation

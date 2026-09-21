@@ -10,6 +10,7 @@ import { listingGraphArgs, listingGraphToDocument } from "@packsource/search";
 import { VerificationBadge } from "@/components/verification-badge";
 import { ListingResultCard } from "@/components/listing-result-card";
 import { verificationLabel } from "@/lib/format";
+import { publishedSupplierReviews, supplierRatingAggregate } from "@packsource/core";
 
 /** Buyer-visible supplier graph: profile, plants, capabilities, certifications. */
 const supplierInclude = {
@@ -57,6 +58,11 @@ export default async function SupplierProfilePage({
   // search index uses, so supplier pages render the exact discovery cards.
   const now = new Date();
   const documents = org.listings.map((graph) => listingGraphToDocument(graph, now));
+  // Verified-purchase reputation: aggregate and the newest published reviews.
+  const [reviews, aggregate] = await Promise.all([
+    publishedSupplierReviews(db, org.id),
+    supplierRatingAggregate(db, org.id),
+  ]);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8" data-testid="supplier-profile">
@@ -134,6 +140,40 @@ export default async function SupplierProfilePage({
           </div>
         </section>
       ) : null}
+
+      <section className="mt-10" data-testid="supplier-reviews">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-lg font-semibold text-neutral-900">Reviews</h2>
+          {aggregate.count > 0 ? (
+            <p className="text-sm text-neutral-600" data-testid="supplier-reviews-aggregate">
+              <span className="font-medium text-neutral-900">{aggregate.average?.toFixed(1)}</span> ★ ·{" "}
+              {aggregate.count} verified {aggregate.count === 1 ? "review" : "reviews"}
+            </p>
+          ) : null}
+        </div>
+        {reviews.length === 0 ? (
+          <p className="mt-3 text-sm text-neutral-500" data-testid="supplier-reviews-empty">
+            No published reviews yet — verified buyers review this supplier after delivered orders.
+          </p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {reviews.slice(0, 5).map((review) => (
+              <article key={review.id} className="rounded-lg border border-neutral-200 p-4" data-testid="supplier-review-card">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <p className="text-sm font-medium text-neutral-900">{review.reviewerOrgName}</p>
+                  <p className="text-xs text-neutral-500">{review.createdAt.getUTCFullYear()}</p>
+                </div>
+                <p className="mt-1 text-sm text-neutral-700">
+                  ★ {review.qualityRating} · ☎ {review.communicationRating} · ⏱ {review.onTimeRating} · 📦{" "}
+                  {review.packagingAccuracyRating}
+                </p>
+                {review.title ? <p className="mt-2 text-sm font-medium text-neutral-900">{review.title}</p> : null}
+                {review.body ? <p className="mt-1 text-sm text-neutral-700">{review.body}</p> : null}
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="mt-10">
         <h2 className="text-lg font-semibold text-neutral-900">Listings</h2>

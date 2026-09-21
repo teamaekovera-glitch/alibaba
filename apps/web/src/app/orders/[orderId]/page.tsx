@@ -1,9 +1,17 @@
-import { RecordNotFoundError } from "@packsource/core";
+import { RecordNotFoundError, isDeliveredOrderStatus } from "@packsource/core";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { db } from "@/lib/db";
 import { formatCents } from "@/lib/money";
 import { ordersRepositories } from "@/lib/orders";
+import { trustRepositories } from "@/lib/trust";
+import {
+  DisputeEvidenceForm,
+  DisputeRespondForm,
+  StartDisputeReviewButton,
+  WithdrawDisputeButton,
+} from "../trust-forms";
 import {
   CancelOrderForm,
   CompleteProductionButton,
@@ -65,6 +73,29 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
   const isStaff = authContext.role === "AEKOVERA_STAFF";
   const isSupplier = order.subOrders.some((leg) => leg.orgId === authContext.orgId);
   const openDispute = order.disputes.find((d) => d.status === "OPEN" || d.status === "UNDER_REVIEW");
+
+  // Trust layer: dispute discussion (participant-scoped via the core
+  // repository) and per-line review state for delivered buyer orders.
+  const trust = await trustRepositories();
+  const disputeDetail = openDispute && trust ? await trust.disputes.disputeDetail(openDispute.id) : null;
+  const isDeliveredBuyerOrder = isBuyer && isDeliveredOrderStatus(order.status);
+  const [listingRefs, orderReviews] = isDeliveredBuyerOrder
+    ? await Promise.all([
+        db.listing.findMany({
+          where: { id: { in: order.orderLines.map((line) => line.listingId).filter((id): id is string => id !== null) } },
+          select: { id: true, slug: true, title: true },
+        }),
+        db.review.findMany({
+          where: { orderId: order.id, orgId: authContext.orgId },
+          select: { orderLineId: true, moderationStatus: true },
+        }),
+      ])
+    : [[], []];
+  const listingByLine = new Map(
+    order.orderLines.map((line) => [line.id, line.listingId ? listingRefs.find((listing) => listing.id === line.listingId) : undefined]),
+  );
+  const reviewByLine = new Map(orderReviews.map((review) => [review.orderLineId, review.moderationStatus]));
+
   const shipments = order.subOrders.flatMap((leg) => leg.shipments);
 
   return (
@@ -189,6 +220,54 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
         ) : null}
       </Card>
 
+      {disputeDetail ? (
+        <Card title={`Dispute — ${disputeDetail.dispute.status}`} testid="dispute-card">
+          <p className="text-sm text-neutral-700">
+            <span className="font-medium">Reason:</span> {disputeDetail.dispute.reason}
+          </p>
+          {disputeDetail.evidence.length > 0 ? (
+            <div className="mt-3" data-testid="dispute-evidence-list">
+              <h3 className="text-sm font-medium text-neutral-900">Evidence</h3>
+              <ul className="mt-1 space-y-1 text-sm text-neutral-700">
+                {disputeDetail.evidence.map((entry) => (
+                  <li key={entry.id} className="font-mono text-xs">
+                    {entry.fileId}
+                    {entry.note ? ` — ${entry.note}` : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {disputeDetail.responses.length > 0 ? (
+            <div className="mt-3 space-y-2" data-testid="dispute-thread">
+              <h3 className="text-sm font-medium text-neutral-900">Discussion</h3>
+              {disputeDetail.responses.map((response) => (
+                <div key={response.id} className="rounded-md border border-neutral-200 px-3 py-2">
+                  <p className="text-xs font-medium text-neutral-600">
+                    {response.orgName} · {response.authorName}
+                  </p>
+                  <p className="mt-1 text-sm text-neutral-700">{response.body}</p>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          {disputeDetail.dispute.status !== "RESOLVED" && disputeDetail.dispute.status !== "WITHDRAWN" ? (
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <DisputeRespondForm orderId={order.id} disputeId={openDispute!.id} />
+              <DisputeEvidenceForm orderId={order.id} disputeId={openDispute!.id} />
+            </div>
+          ) : null}
+          <div className="mt-3 flex gap-2">
+            {isBuyer && disputeDetail.dispute.status === "OPEN" ? (
+              <WithdrawDisputeButton orderId={order.id} disputeId={openDispute!.id} />
+            ) : null}
+            {isStaff && disputeDetail.dispute.status === "OPEN" ? (
+              <StartDisputeReviewButton orderId={order.id} disputeId={openDispute!.id} />
+            ) : null}
+          </div>
+        </Card>
+      ) : null}
+
       <Card title="Invoices" testid="invoices">
         {order.invoices.length === 0 ? (
           <p className="text-sm text-neutral-600">No invoices yet.</p>
@@ -299,6 +378,44 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ or
           <div className="mt-3"><StartProductionButton orderId={order.id} /></div>
         ) : null}
       </Card>
+
+      {isDeliveredBuyerOrder ? (
+        <Card title="Reviews" testid="order-reviews">
+          <p className="text-sm text-neutral-600">
+            Verified-purchase reviews are left on the product page — one per delivered order line, published after
+            moderation.
+          </p>
+          <ul className="mt-3 space-y-2 text-sm">
+            {order.orderLines.map((line) => {
+              const listing = listingByLine.get(line.id);
+              const status = reviewByLine.get(line.id);
+              return (
+                <li key={line.id} className="flex flex-wrap items-center justify-between gap-2" data-testid="review-line">
+                  <span className="text-neutral-800">{listing?.title ?? line.description}</span>
+                  {status ? (
+                    <span
+                      className={`rounded px-2 py-0.5 text-xs font-medium ${
+                        status === "PUBLISHED"
+                          ? "bg-green-100 text-green-800"
+                          : status === "REJECTED"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-amber-100 text-amber-800"
+                      }`}
+                      data-testid="review-line-status"
+                    >
+                      Review {status.toLowerCase()}
+                    </span>
+                  ) : listing ? (
+                    <Link className="text-sm underline" href={`/products/${listing.slug}`} data-testid="review-line-link">
+                      Leave a review
+                    </Link>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </Card>
+      ) : null}
 
       {isBuyer && order.status === "DRAFT" ? (
         <Card title="Cancel" testid="cancel-section">

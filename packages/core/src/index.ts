@@ -26,3 +26,4 @@ export * from "./listing-repository";
 export * from "./listing-import";
 export * from "./spec-extraction";
 export * from "./orders";
+export * from "./trust";

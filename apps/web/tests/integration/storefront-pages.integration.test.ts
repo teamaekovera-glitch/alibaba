@@ -16,6 +16,14 @@ import type { PrismaClient } from "@packsource/db";
  * data — is real.
  */
 
+// The reviews data loader resolves the session through next-auth, whose beta
+// build cannot resolve `next/server` under vitest's node resolver — and these
+// pages render anonymously anyway. auth() -> null exercises the signed-out
+// storefront path.
+vi.mock("@/auth", () => ({
+  auth: async () => null,
+}));
+
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: () => undefined }),
   notFound: () => {
@@ -91,7 +99,10 @@ describe("buyer storefront pages against the seed", () => {
     expect(html).toContain('data-testid="lead-time-bands"');
     expect(html).toContain('data-testid="attribute-table"');
     expect(html).toContain('data-testid="supplier-card"');
-    expect(html).toContain('data-testid="reviews-placeholder"');
+    // PR #14 replaced the PR #10 placeholder with the live reviews section
+    // (anonymous render: aggregate-less empty state).
+    expect(html).toContain('data-testid="reviews-section"');
+    expect(html).toContain('data-testid="reviews-empty"');
     expect(html).toContain("Demo data");
     // Guest-visible RFQ handoff is a plain link — auth lives in the RFQ surface.
     expect(html).toContain('href="/rfq"');

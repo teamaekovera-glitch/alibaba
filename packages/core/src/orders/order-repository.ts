@@ -400,7 +400,7 @@ export class OrderRepository {
       const payments = await tx.payment.findMany({ where: { orderId, status: "SUCCEEDED" } });
       const existing = await tx.dispute.findFirst({ where: { orderId, status: { in: ["OPEN", "UNDER_REVIEW"] } } });
       const dispute = await tx.dispute.create({
-        data: { orderId, orgId: this.#auth.orgId, openedByUserId: this.#auth.userId, reason },
+        data: { orderId, orgId: this.#auth.orgId, openedByUserId: this.#auth.userId, reason, preOrderStatus: order.status },
       });
       await this.#transition(tx, order, payments, existing?.id ?? dispute.id, { type: "OPEN_DISPUTE", at });
       await this.#audit(tx, ORDER_AUDIT.disputeOpen, "Dispute", dispute.id, reason);
