@@ -106,6 +106,20 @@ describe("organizationJsonLd", () => {
     expect(address.addressCountry).toBe("VN");
     expect("description" in jsonld).toBe(false);
   });
+
+  it("honors basePath for directory profiles while the default stays /suppliers", () => {
+    const input = {
+      site: SITE,
+      slug: "sweet-sams-baking-co",
+      name: "Sweet Sam's Baking Co",
+      about: "Wholesale bakery",
+      locations: [{ city: "Bronx", country: "US" }],
+    } as const;
+    expect(organizationJsonLd(input).url).toBe(`${SITE}/suppliers/sweet-sams-baking-co`);
+    expect(organizationJsonLd({ ...input, basePath: "/directory" }).url).toBe(
+      `${SITE}/directory/sweet-sams-baking-co`,
+    );
+  });
 });
 
 describe("sitemapEntries", () => {

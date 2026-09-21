@@ -95,18 +95,23 @@ export interface OrganizationJsonLdInput {
   logoUrl?: string | null;
   /** Primary plant city/country pairs, most relevant first. */
   locations: { city: string; country: string }[];
+  /** Route prefix for the emitted url; defaults to "/suppliers" (transactional profiles). */
+  basePath?: string;
 }
 
 /** schema.org/Organization for a supplier profile page. */
 export function organizationJsonLd(input: OrganizationJsonLdInput): Record<string, unknown> {
   const primary = input.locations[0];
+  // Directory profiles emit /directory/<slug>; the transactional default
+  // stays /suppliers/<slug> for every existing call site.
+  const basePath = input.basePath ?? "/suppliers";
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: input.name,
     ...(input.about ? { description: input.about } : {}),
     ...(input.logoUrl ? { logo: input.logoUrl } : {}),
-    url: absoluteUrl(input.site, `/suppliers/${input.slug}`),
+    url: absoluteUrl(input.site, `${basePath}/${input.slug}`),
     ...(primary
       ? { address: { "@type": "PostalAddress", addressLocality: primary.city, addressCountry: primary.country } }
       : {}),
