@@ -152,7 +152,7 @@ describe("stable agent shapes", () => {
 
   it("serializes listings with a stable canonical URL and integer cents", () => {
     const listing = serializeAgentListing(document, supplier);
-    expect(listing.url).toBe("/listings/acme-120ml-pet-syrup-bottle");
+    expect(listing.url).toBe("/products/acme-120ml-pet-syrup-bottle");
     expect(listing.price.fromCents).toBe(14);
     expect(listing.moq.qty).toBe(5_000);
     expect(listing.category).toEqual({ family: "rigid", leaf: "pet-bottles" });

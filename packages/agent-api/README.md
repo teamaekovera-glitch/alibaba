@@ -36,7 +36,7 @@ truth. Field order is fixed by construction; additive changes only.
 ### AgentListing
 
 ```
-{ id, slug, url: "/listings/<slug>", title, description,
+{ id, slug, url: "/products/<slug>", title, description,
   category: { family, leaf }, material, sizeBand,
   moq: { qty, band }, price: { fromCents, band },
   leadTimeDays, locations: { cities[], countries[] },

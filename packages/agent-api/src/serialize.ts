@@ -40,7 +40,7 @@ export interface AgentListing {
 
 /** Storefront-canonical public path for a listing. */
 export function listingUrl(slug: string): string {
-  return `/listings/${slug}`;
+  return `/products/${slug}`;
 }
 
 export function serializeAgentListing(document: ListingSearchDocument, supplier: AgentSupplierRef): AgentListing {
