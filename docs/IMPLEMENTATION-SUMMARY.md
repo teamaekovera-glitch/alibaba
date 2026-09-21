@@ -1,6 +1,6 @@
 # PackSource v1.0 — Implementation Summary
 
-> **Status as of 2026-09-21 — build complete.** `main` at `b0b780fefe35df838dee040eef5fd36ae83447c0` (PR #14; PR #15 merged immediately before it). The closing QA/documentation PR (#16) is the last PR of the build.
+> **Status as of 2026-09-21 — build complete.** `main` at `eabbc5b3c1e598a851a8711548385a3ff57b768f` (PR #17). The build closed with the QA/documentation PR (#16), followed by the post-close RFQ-creation fix (PR #17).
 > Governing spec: **PackSource v1.0 — packaging marketplace spec** (Blueprint artifact `art_tooqnEmJ`)
 > Every number, SHA, file path, and job name in this document was read directly from the repository and the GitHub PR API this session — nothing is estimated.
 
@@ -10,7 +10,7 @@
 
 **PackSource** is Aekovera's vertical B2B marketplace for food & beverage packaging: emerging CPG brands discover verified packaging suppliers, compare structured products and landed costs, run RFQs, negotiate terms, and buy with escrow-protected payments. It connects with Aekovera's supplier, co-manufacturer, and sourcing ecosystem (the `AekoveraProjectRef` and integration models).
 
-**What exists today.** The repo is a greenfield pnpm 10.34.5 + Turborepo monorepo (Node 20+, TypeScript strict) with one Next.js 15 App Router application and **ten shared packages**. Every build wave from the approved spec has landed as a squash-merged PR with green CI, followed by the closing QA/documentation PR:
+**What exists today.** The repo is a greenfield pnpm 10.34.5 + Turborepo monorepo (Node 20+, TypeScript strict) with one Next.js 15 App Router application and **ten shared packages**. Every build wave from the approved spec has landed as a squash-merged PR with green CI, followed by the closing QA/documentation PR and one post-close RFQ fix:
 
 | # | Wave | Merge commit | Delivered |
 |---|------|--------------|-----------|
@@ -28,7 +28,8 @@
 | #13 | Admin & notifications | `f2a64ff3fc30d2c0b6e1cb93549ab4c0bb4a2ed9` | Staff admin console (verification, moderation, disputes, placements, audit/export) and the notification domain |
 | #14 | Trust | `b0b780fefe35df838dee040eef5fd36ae83447c0` | Buyer-supplier messaging, verified-purchase reviews + responses + aggregates, dispute lifecycle with evidence and withdrawal, fraud controls |
 | #15 | AI & integrations | `302d035e5dd18a7e3f1053894c85f72adb14cd75` | Listing-extraction AI services, k-anonymous benchmarks, HMAC-signed Aekovera OS webhooks, read-only org-scoped agent API, SEO metadata/JSON-LD/robots/sitemap |
-| #16 | **Closing: E2E QA + docs** | *(open — this PR)* | Playwright e2e suite over the deterministic seed (9 tests, 5 specs), dedicated `e2e` CI job, this final-state documentation |
+| #16 | **Closing: E2E QA + docs** | `c11d977afbeb4b259e7be204b1e0567d36d8b742` | Playwright e2e suite over the deterministic seed (9 tests, 5 specs), dedicated `e2e` CI job, this final-state documentation |
+| #17 | RFQ creation fix | `eabbc5b3c1e598a851a8711548385a3ff57b768f` | RFQ form category selection + SINGLE-listing mode (deep links inherit the category), typed matching errors, UI-created RFQs sendable with supplier matches — 12 files changed, new `rfq-ui-create.spec.ts` (3 e2e tests) and `rfq-form.test.ts` (18 unit tests) |
 
 **The one rule that shaped everything: mock-first.** `MOCK=true` is the default (also forced in CI). All nine external services — Claude, Gemini, Meilisearch, Stripe Connect, Resend, Pusher, R2/S3, EasyPost, Inngest — sit behind typed adapters with deterministic in-memory mocks (no `Math.random`, no `Date.now`, no network). The platform boots, tests, demos, and **runs its entire e2e suite with zero API keys**. Real credentials attach at deploy time through the same interfaces.
 
@@ -38,9 +39,9 @@
 
 ## 2. PR index
 
-All product PRs squash-merge to `main` after CI goes green. Merge SHAs below are read from the GitHub PR API; PR #16's head SHA is read from git.
+All product PRs squash-merge to `main` after CI goes green. Merge SHAs below are read from the GitHub PR API.
 
-- **State key:** MERGED (SHA above) · #16 OPEN/draft until the closing review completes.
+- **State key:** all PRs #2–#17 MERGED; #17 is the latest (merged 2026-09-21).
 
 ### PR #5 — feat(db): migration importer and deterministic fictional seed
 - **Delivered:** CSV migration importer (`packages/db/src/importer/`): column contract, normalization, taxonomy-aware dedup scoring (MERGE/REVIEW/NEW), merge reports, transactional writes. Deterministic fictional seed (`packages/db/src/seed/`, `pnpm --filter @packsource/db seed`): seeded RNG, fictional org/user names, taxonomy-conformant attributes, placeholder images, 1,500 listings across 150 supplier orgs, 60 workflow orders, 30 reviews — recreated identically on every run via `seed_*`-prefixed id wipes. CLI entries in `packages/db/src/cli/` (`seed-cli.ts`, `import-cli.ts`). Tests: importer integration, seed determinism, dedup unit matrix.
@@ -75,8 +76,11 @@ All product PRs squash-merge to `main` after CI goes green. Merge SHAs below are
 ### PR #15 — feat(ai): AI services, benchmarks, webhooks, agent API, SEO
 - **Delivered:** `packages/benchmarks` (k-anonymous price-benchmark aggregates), `packages/integrations` (HMAC-signed Aekovera OS webhook deliveries), `packages/agent-api` (read-only, org-scoped agent API for listings/suppliers/search), `packages/seo` (canonical metadata, Open Graph, Product/Organization JSON-LD, robots, sitemap), and deterministic AI listing-extraction services. `/api/agent` routes.
 
-### PR #16 — test(e2e): closing QA suite and final documentation *(open)*
+### PR #16 — test(e2e): closing QA suite and final documentation
 - **Delivered:** the Playwright e2e suite (§6), the dedicated `e2e` CI job (§5a), this final-state document and README.
+
+### PR #17 — fix(rfq): category selection, single-listing mode, and typed matching errors
+- **Delivered:** the fix for the RFQ-creation defect PR #16 first reported (§8, resolved): the RFQ form gains a category selector and a SINGLE-listing mode — product-page deep links mount the form with the listing's category context (`rfq-listing-context.ts`, new: the shared server loader behind both the dashboard mount and the create action; only LIVE listings yield context) — form parsing (`rfq-form.ts`, new: pure FormData → `CreateRfqInput` functions, unit-tested) rejects a category-less broadcast with a form-level error instead of a domain round-trip, and matching errors surface as typed domain errors on the draft RFQ detail page instead of being uncaught. UI-created RFQs can now be sent and return supplier matches. **12 files changed:** 5 app surfaces (`rfq/page.tsx`, `rfq/forms.tsx`, `rfq/actions.ts`, `rfq/[rfqId]/page.tsx`, `products/[slug]/page.tsx`), the 2 new `src/lib` modules, and 5 test files. **Test additions:** `tests/unit/rfq-form.test.ts` (+235 lines, 18 unit tests) and `tests/e2e/rfq-ui-create.spec.ts` (+102 lines, 3 e2e tests); buyer-journey spec, e2e helpers, and the storefront integration spec adjusted. Merged 2026-09-21.
 
 ---
 
@@ -259,11 +263,11 @@ flowchart TD
 
 ## 6. Test matrix
 
-Actual file counts on the closing branch (verified by listing the trees this session; unit = `tests/unit/*.test.ts`, integration = `tests/integration/*.test.ts` per workspace):
+Actual file counts on `main` at `eabbc5b` (verified by listing the trees and running the web unit suite this session; unit = `tests/unit/*.test.ts`, integration = `tests/integration/*.test.ts` per workspace):
 
 | Workspace | Unit files | Integration files |
 |---|---|---|
-| `apps/web` | 4 | 3 |
+| `apps/web` | 5 | 3 |
 | `packages/ai` | 4 | 0 |
 | `packages/core` | 10 | 9 |
 | `packages/db` | 3 | 3 |
@@ -272,9 +276,9 @@ Actual file counts on the closing branch (verified by listing the trees this ses
 | `packages/notifications` | 1 | 1 |
 | `packages/benchmarks` | 1 | 0 |
 | `packages/integrations` | 1 | 1 |
-| **Totals** | **30** | **18** |
+| **Totals** | **31** | **18** |
 
-**E2E — Playwright 1.63.0 (`apps/web/tests/e2e/`, the closing PR):**
+**E2E — Playwright 1.63.0 (`apps/web/tests/e2e/`; closing suite from PR #16, extended by PR #17):**
 
 | Spec | Tests | Coverage |
 |---|---|---|
@@ -283,7 +287,8 @@ Actual file counts on the closing branch (verified by listing the trees this ses
 | `buyer-journey.spec.ts` | 1 | The full §5b trade loop: bootstrapped RFQ → sent-RFQ dashboard/detail → supplier quote → counter-offer negotiation → buyer award → order confirmation → deposit payment → production → balance invoice + payment → shipment creation → transit → delivery → automatic escrow release → staff payout settlement → terminal `ESCROW_RELEASED`/`PAID` state visible to buyer and supplier |
 | `supplier-listing.spec.ts` | 1 | Draft creation, deterministic spec-sheet upload → AI extraction, suggestion confirmation, submit for review (`DRAFT → PENDING_REVIEW`) |
 | `storefront-compare.spec.ts` | 2 | Seeded search narrowing + product-page economics; compare tray → `/compare` table with both products |
-| **Total** | **9 tests** | 8 run in CI (magic-link self-skips in production mode); single worker, `retries: 0` |
+| `rfq-ui-create.spec.ts` | 3 | RFQ creation through the real UI (PR #17): broadcast with a category sends and returns supplier matches; a product-page deep link creates a SINGLE-listing RFQ with the inherited category; broadcast without a category is rejected as form copy, not a domain error |
+| **Total** | **12 tests, 6 specs** | 11 run in CI (magic-link self-skips in production mode); single worker, `retries: 0` |
 
 **Determinism mechanics (the suite is re-runnable against a reused database):**
 - `global-setup.ts` runs `prisma migrate reset --force` + the deterministic seed on every invocation, so local runs start from exactly the state CI provisions (the mock Stripe adapter mints deterministic payment-intent ids; without the reset, rows from previous runs collide on unique constraints).
@@ -334,7 +339,7 @@ export DATABASE_URL=postgresql://packsource:packsource@localhost:5432/packsource
 export AUTH_SECRET=e2e-test-secret-not-for-production
 export MOCK=true
 
-pnpm --filter @packsource/web test:e2e                 # full suite (9 tests)
+pnpm --filter @packsource/web test:e2e                 # full suite (12 tests; 11 run in CI — see §6)
 pnpm --filter @packsource/web exec playwright test tests/e2e/buyer-journey.spec.ts   # one spec
 pnpm --filter @packsource/web exec playwright show-report
 ```
@@ -357,12 +362,12 @@ Dev-mail: outbound email goes to the mock Mail adapter; read it at `/api/dev/inb
 
 ## 8. Closing state
 
-**All spec waves are merged.** The build closed with PR #16 (this document, the e2e suite, and the e2e CI job). Post-v1.0 candidates, tracked outside this build:
+**All spec waves are merged.** The build closed with PR #16 (this document, the e2e suite, and the e2e CI job), followed by the post-close RFQ-creation fix (PR #17). Post-v1.0 items, tracked outside this build:
 
-1. **Known defect (reported, not patched here — outside this PR's ownership):** the UI RFQ-creation form offers no category selector or single-listing mode, while RFQ broadcast matching requires a `categoryId`; UI-created RFQs therefore cannot be sent, and the draft RFQ detail page can surface an uncaught domain error in the matching path. The e2e suite bootstraps RFQs through `RfqRepository` (seed-org-backed, same data path as the UI) so the downstream RFQ workflow is still exercised end to end; a follow-up app fix should add category/mode selection to the RFQ form.
+1. **✅ RESOLVED by PR #17 (`eabbc5b3c1e598a851a8711548385a3ff57b768f`, merged 2026-09-21):** the RFQ-creation defect PR #16 first reported — the UI RFQ-creation form offered no category selector or single-listing mode while RFQ broadcast matching requires a `categoryId`, so UI-created RFQs could not be sent, and the draft RFQ detail page could surface an uncaught domain error in the matching path. PR #17 added category selection and a SINGLE-listing mode to the form (product-page deep links inherit the listing's category), surfaced typed matching errors on the draft detail page, and covered it with the `rfq-ui-create.spec.ts` e2e spec; UI-created RFQs now send and return supplier matches.
 2. **Postgres row-level security** — hardening layer on top of the repository-level org gates (explicitly a hardening step, not the primary gate, per `permissions.ts`).
 3. **Real provider adapters** — implement the same ten interfaces behind `MOCK=false` env switching at deploy time (the seam is already the contract).
 
 ---
 
-*Prepared from the repository state at `b0b780f` plus PR #16's branch, and the GitHub PR API on 2026-09-21. Sources: `git log origin/main`, `gh pr view` for #2–#16 (merge SHAs and changed-file counts), `.github/workflows/ci.yml`, `packages/core/src/permissions.ts`, `packages/db/prisma/schema.prisma`, `packages/db/src/seed/seed.ts` (seed counts cross-checked against CI seed logs), `apps/web/tests/e2e/*` (specs, helpers, global-setup), `apps/web/playwright.config.ts`, and the test trees listed in §6.*
+*Prepared from the repository state at `eabbc5b` (`main`), and the GitHub PR API on 2026-09-21. Sources: `git log origin/main`, `gh pr view` for #2–#17 (merge SHAs and changed-file counts), `.github/workflows/ci.yml`, `packages/core/src/permissions.ts`, `packages/db/prisma/schema.prisma`, `packages/db/src/seed/seed.ts` (seed counts cross-checked against CI seed logs), `apps/web/tests/e2e/*` (specs, helpers, global-setup), `apps/web/playwright.config.ts`, and the test trees listed in §6.*
