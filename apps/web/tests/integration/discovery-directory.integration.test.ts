@@ -101,7 +101,7 @@ describe("discovery directory surfaces", () => {
 
   it("renders the home category grid with live counts that match the database", async () => {
     const [html, dairyCount, beveragesCount] = await Promise.all([
-      renderToStaticMarkup(await HomePage({})),
+      renderToStaticMarkup(await HomePage()),
       prisma.platformSupplier.count({ where: { primaryCategory: "dairy" } }),
       prisma.platformSupplier.count({ where: { primaryCategory: "beverages" } }),
     ]);
