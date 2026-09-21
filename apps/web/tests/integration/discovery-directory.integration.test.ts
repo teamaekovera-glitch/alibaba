@@ -24,6 +24,16 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
+/**
+ * Isolates one category card's markup so its count assertion can't be
+ * satisfied by a different category's label elsewhere on the page.
+ */
+function homeCardSegment(html: string, slug: string): string {
+  const match = html.match(new RegExp(`data-testid="category-card-${slug}".*?</a>`, "s"));
+  if (!match) throw new Error(`category card for "${slug}" not found in the rendered home`);
+  return match[0];
+}
+
 const DATABASE_URL =
   process.env.DATABASE_URL ??
   "postgresql://packsource:packsource@localhost:5432/packsource_test";
@@ -34,6 +44,7 @@ const { default: HomePage } = await import("@/app/page");
 const { default: CategoryPage } = await import("@/app/categories/[slug]/page");
 const { default: DirectoryPage } = await import("@/app/directory/[slug]/page");
 const { generateMetadata: directoryMetadata } = await import("@/app/directory/[slug]/page");
+const { categoryCountLabel } = await import("@/components/directory/category-card");
 
 const TEST_PREFIX = "dir-test-";
 const DAIRY_ROWS = 25; // forces a second page at the 24-per-page grid
@@ -109,9 +120,13 @@ describe("discovery directory surfaces", () => {
     expect(html).toContain('data-testid="category-grid"');
     expect(html).toContain('data-testid="category-card-dairy"');
     expect(html).toContain('href="/categories/dairy"');
-    // Counts are live reads — a card can never disagree with its rows.
-    expect(html).toContain(`${dairyCount.toLocaleString("en-US")} suppliers`);
-    expect(html).toContain(`${beveragesCount.toLocaleString("en-US")} suppliers`);
+    // Counts are live reads — a card can never disagree with its rows. The
+    // expected label comes from the same categoryCountLabel helper the card
+    // renders, scoped to the card's own markup: an empty category (CI's
+    // fixture-only database) asserts its honest "Coming soon" zero state,
+    // while a locally imported database asserts its real count.
+    expect(homeCardSegment(html, "dairy")).toContain(categoryCountLabel(dairyCount));
+    expect(homeCardSegment(html, "beverages")).toContain(categoryCountLabel(beveragesCount));
     // Preserved surfaces: hero search form and the nine packaging families.
     expect(html).toContain('action="/search"');
     expect(html).toContain('data-testid="family-grid"');
