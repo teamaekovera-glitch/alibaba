@@ -5,9 +5,10 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "prisma generate --schema=../db/prisma/schema.prisma && tsc --noEmit",
+    "generate": "prisma generate --schema=../db/prisma/schema.prisma",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:integration": "prisma generate --schema=../db/prisma/schema.prisma && vitest run --config vitest.integration.config.ts"
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "@packsource/core": "workspace:*",
