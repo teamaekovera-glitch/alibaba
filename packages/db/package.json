@@ -7,9 +7,10 @@
   },
   "scripts": {
     "postinstall": "prisma generate",
-    "typecheck": "prisma generate && tsc --noEmit",
-    "test": "prisma generate && vitest run",
-    "test:integration": "prisma generate && vitest run --config vitest.integration.config.ts",
+    "generate": "prisma generate",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "import": "tsx src/cli/import-cli.ts",
     "import-platform-suppliers": "tsx src/cli/import-platform-suppliers-cli.ts",
     "seed": "tsx src/cli/seed-cli.ts",

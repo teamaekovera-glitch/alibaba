@@ -1,35 +1,46 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CATEGORY_TAXONOMY } from "@packsource/db";
+import { CATEGORY_TAXONOMY, categoryCounts, DISCOVERY_CATEGORIES } from "@packsource/db";
+import { db } from "@/lib/db";
 import { DemoDataBanner } from "@packsource/ui";
 
+import { CategoryCard } from "@/components/directory/category-card";
+
 /**
- * Buyer landing page: the discovery entry point. Category families come from
- * the live taxonomy module (not a hardcoded list) so the grid can never drift
- * from what search facets count. Public by design — guest browsing is the
- * storefront default (spec §discovery).
+ * Category-first buyer landing (spec: home is the discovery surface): buyers
+ * arrive looking for who can make or pack their product, so the body opens on
+ * the food/CPG category grid with live supplier counts. The packaging search
+ * hero, the nine-family link row, and the workflow entry cards below keep
+ * listing-first buyers fully served — no existing route moves.
+ *
+ * force-dynamic: counts come from the directory table at request time, and
+ * the build environment is intentionally DB-less.
  */
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
-  title: "PackSource — source packaging from verified suppliers",
+  title: "PackSource — find the right supplier by product category",
   description:
-    "Faceted, typo-tolerant, visual discovery across Aekovera-vetted packaging suppliers.",
+    "Browse thousands of Platform Ready food & CPG suppliers by product category, or search packaging listings across nine families from Aekovera-vetted suppliers.",
 };
 
-export default function BuyerLandingPage() {
+export default async function BuyerLandingPage() {
   const families = CATEGORY_TAXONOMY.map((family) => ({ slug: family.slug, name: family.name }));
+  const counts = await categoryCounts(db);
+  const totalSuppliers = Object.values(counts).reduce((sum, n) => sum + n, 0);
 
   return (
-
     <div className="mx-auto w-full max-w-6xl px-4 py-10">
       <DemoDataBanner />
 
       <section className="py-8 text-center">
         <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">
-          Source packaging from verified suppliers
+          Find the right supplier by product category
         </h1>
         <p className="mx-auto mt-3 max-w-2xl text-neutral-500">
-          Search 1,200+ live listings across nine packaging families — filter by material, MOQ,
-          lead time, certifications, and location, or upload a photo to find lookalikes.
+          Browse {totalSuppliers.toLocaleString("en-US")} Platform Ready suppliers across{" "}
+          {DISCOVERY_CATEGORIES.length} food &amp; CPG categories — pick the product you need made
+          or packed and we&apos;ll show you who can do it.
         </p>
         <form action="/search" method="get" className="mx-auto mt-6 flex max-w-xl gap-2">
           <input
@@ -56,7 +67,20 @@ export default function BuyerLandingPage() {
 
       <section className="py-6">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
-          Browse by family
+          Browse suppliers by category
+        </h2>
+        <ul className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4" data-testid="category-grid">
+          {DISCOVERY_CATEGORIES.map((category) => (
+            <li key={category.slug}>
+              <CategoryCard category={category} count={counts[category.slug] ?? 0} />
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="py-6">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-500">
+          Browse by packaging family
         </h2>
         <ul className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3" data-testid="family-grid">
           {families.map((family) => (

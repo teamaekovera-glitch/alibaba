@@ -2,19 +2,32 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["^build", "^generate"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
+    // The generated .prisma client lives in the pnpm virtual store, outside
+    // any package's outputs — turbo must not cache this task.
+    "generate": {
+      "cache": false
+    },
     "typecheck": {
       // Upstream typechecks first — @packsource/core resolves the generated
       // Prisma client types through @packsource/db.
-      "dependsOn": ["^typecheck"]
+      "dependsOn": ["^typecheck", "^generate", "generate"]
     },
-    "test": {},
-    "test:integration": {}
+    // The generated Prisma client is shared mutable state: prisma generate
+    // deletes and rewrites the client directory, so every generation must
+    // complete before any test/typecheck/build loads it — otherwise a
+    // sibling's imports vanish mid-run (the CI unit-test race).
+    "test": {
+      "dependsOn": ["^generate", "generate"]
+    },
+    "test:integration": {
+      "dependsOn": ["^generate", "generate"]
+    }
   }
 }

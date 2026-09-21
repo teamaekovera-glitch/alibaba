@@ -6,6 +6,7 @@ import {
   organizationJsonLd,
   productJsonLd,
   robotsRules,
+  type OrganizationJsonLdInput,
   sitemapEntries,
   siteUrl,
   SITE_URL_ENV,
@@ -105,6 +106,20 @@ describe("organizationJsonLd", () => {
     expect(address.addressLocality).toBe("Ho Chi Minh City");
     expect(address.addressCountry).toBe("VN");
     expect("description" in jsonld).toBe(false);
+  });
+
+  it("honors basePath for directory profiles while the default stays /suppliers", () => {
+    const input: OrganizationJsonLdInput = {
+      site: SITE,
+      slug: "sweet-sams-baking-co",
+      name: "Sweet Sam's Baking Co",
+      about: "Wholesale bakery",
+      locations: [{ city: "Bronx", country: "US" }],
+    };
+    expect(organizationJsonLd(input).url).toBe(`${SITE}/suppliers/sweet-sams-baking-co`);
+    expect(organizationJsonLd({ ...input, basePath: "/directory" }).url).toBe(
+      `${SITE}/directory/sweet-sams-baking-co`,
+    );
   });
 });
 

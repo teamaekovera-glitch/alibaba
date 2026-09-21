@@ -63,18 +63,24 @@ describe("classifySupplier — pinned real records", () => {
     expect(result.primaryCategory).toBe("grains-baking");
   });
 
-  it("assigns every committed fixture row a recognized primary category", () => {
-    const fixture = path.resolve(
-      path.dirname(fileURLToPath(import.meta.url)),
-      "../../fixtures/platform-suppliers/platform-ready-20260817.csv",
-    );
-    const { rows, errors } = readPlatformSupplierRows(readFileSync(fixture, "utf8"));
-    expect(errors).toEqual([]);
-    expect(rows.length).toBe(7658);
-    for (const row of rows) {
-      expect(isDiscoveryCategorySlug(row.primaryCategory)).toBe(true);
-    }
-  });
+  it(
+    "assigns every committed fixture row a recognized primary category",
+    // 7,658-row CSV parse + full-corpus classification is pure CPU work that
+    // sits near vitest's 5s default under CI's parallel-suite contention.
+    { timeout: 60_000 },
+    () => {
+      const fixture = path.resolve(
+        path.dirname(fileURLToPath(import.meta.url)),
+        "../../fixtures/platform-suppliers/platform-ready-20260817.csv",
+      );
+      const { rows, errors } = readPlatformSupplierRows(readFileSync(fixture, "utf8"));
+      expect(errors).toEqual([]);
+      expect(rows.length).toBe(7658);
+      for (const row of rows) {
+        expect(isDiscoveryCategorySlug(row.primaryCategory)).toBe(true);
+      }
+    },
+  );
 });
 
 describe("classifySupplier — fallback and determinism", () => {
