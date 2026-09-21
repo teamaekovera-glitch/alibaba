@@ -7,7 +7,7 @@ Aekovera's vertical B2B marketplace for food & beverage packaging: emerging CPG 
 ## What's in the box
 
 - **Discovery** — faceted Meilisearch search, pgvector semantic/hybrid ranking, visual search, and a Postgres-outage fallback; product pages with full landed-cost economics; four-item compare.
-- **Trade** — RFQs, supplier quotes, negotiation threads, quote cart, awards, and the 30/70 order machine (deposit → production → balance → shipment → delivery) with Stripe Connect mock escrow, automatic release, and staff payout settlement.
+- **Trade** — RFQs (broadcast or SINGLE-listing, with category selection on creation and typed matching errors), supplier quotes, negotiation threads, quote cart, awards, and the 30/70 order machine (deposit → production → balance → shipment → delivery) with Stripe Connect mock escrow, automatic release, and staff payout settlement.
 - **Supplier side** — six-step resumable onboarding, listing editors with bulk CSV import, human-reviewed AI spec extraction, quote response, fulfillment.
 - **Trust** — messaging, verified-purchase reviews with responses and aggregates, dispute lifecycle with mediation, fraud controls.
 - **Operations** — staff admin console (verification, moderation, disputes, placements, audit/export), notifications, k-anonymous price benchmarks, HMAC-signed Aekovera OS webhooks, a read-only org-scoped agent API, and SEO metadata/JSON-LD/robots/sitemap.
@@ -55,7 +55,7 @@ pnpm dev                    # http://localhost:3000 — health check at /health
 
 ## End-to-end tests
 
-Nine Playwright tests (`apps/web/tests/e2e/`) cover password + magic-link auth, protected routes, the six-step onboarding wizard with resume, supplier listing create → AI extraction → submit, storefront search + compare, and the complete buyer journey — RFQ → quote → counter-offer → award → deposit → production → balance invoice → shipment → delivery → automatic escrow release → staff payout settlement. Global setup resets and reseeds the database and provisions deterministic e2e accounts on every run.
+Twelve Playwright tests across six specs (`apps/web/tests/e2e/`; eleven run in CI — the dev-inbox magic-link test self-skips against production builds) cover password + magic-link auth, protected routes, the six-step onboarding wizard with resume, supplier listing create → AI extraction → submit, storefront search + compare, RFQ creation through the real UI — broadcast with a category, SINGLE-listing RFQs from product-page deep links, and the category-required validation on broadcast — and the complete buyer journey — RFQ → quote → counter-offer → award → deposit → production → balance invoice → shipment → delivery → automatic escrow release → staff payout settlement. Global setup resets and reseeds the database and provisions deterministic e2e accounts on every run.
 
 ```bash
 export DATABASE_URL=postgresql://packsource:packsource@localhost:5432/packsource_e2e
