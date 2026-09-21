@@ -8,6 +8,7 @@ import { DemoDataBanner } from "@packsource/ui";
 
 import { VerificationBadge } from "@/components/verification-badge";
 import { AddToCompareButton } from "@/components/add-to-compare";
+import { ReviewsSection } from "./reviews-section";
 import {
   formatLeadTimeDays,
   formatPriceCents,
@@ -349,16 +350,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </section>
       ) : null}
 
-      <section
-        className="mt-10 rounded-lg border border-dashed border-neutral-300 p-6"
-        data-testid="reviews-placeholder"
-      >
-        <h2 className="text-lg font-semibold text-neutral-900">Reviews</h2>
-        <p className="mt-2 text-sm text-neutral-500">
-          Buyer reviews arrive with the trust wave — ratings, verified orders, and dispute outcomes
-          will be summarized here.
-        </p>
-      </section>
+      <ReviewsSection listingId={listing.id} slug={listing.slug} supplierOrgId={listing.orgId} />
     </div>
   );
 }

@@ -76,6 +76,72 @@ export interface PublicReview {
   createdAt: Date;
 }
 
+/** Serialized public review shape, shared by session and storefront reads. */
+type ReviewWithOrg = Prisma.ReviewGetPayload<{ include: { org: { select: { id: true; name: true } } } }>;
+
+function toPublicReview(row: ReviewWithOrg): PublicReview {
+  return {
+    id: row.id,
+    listingId: row.listingId,
+    reviewerOrgId: row.org.id,
+    // Org-level authorship only — no personal emails or phones.
+    reviewerOrgName: row.org.name,
+    qualityRating: row.qualityRating,
+    communicationRating: row.communicationRating,
+    onTimeRating: row.onTimeRating,
+    packagingAccuracyRating: row.packagingAccuracyRating,
+    title: row.title,
+    // Read-side redaction: nothing leaks through rows written before the rule.
+    body: row.body === null ? null : redactContactInfo(row.body),
+    supplierResponse: row.supplierResponse === null ? null : redactContactInfo(row.supplierResponse),
+    supplierRespondedAt: row.supplierRespondedAt,
+    createdAt: row.createdAt,
+  };
+}
+
+/**
+ * Storefront reads — session-free: published reviews are public data and these
+ * helpers carry no acting identity, so pages never fabricate an AuthContext.
+ */
+export async function publishedListingReviews(db: PrismaClient, listingId: string): Promise<PublicReview[]> {
+  const rows = await db.review.findMany({
+    where: { listingId, moderationStatus: "PUBLISHED" },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    include: { org: { select: { id: true, name: true } } },
+  });
+  return rows.map(toPublicReview);
+}
+
+/** Published reviews for a supplier org, newest first (public surface). */
+export async function publishedSupplierReviews(db: PrismaClient, supplierOrgId: string): Promise<PublicReview[]> {
+  const rows = await db.review.findMany({
+    where: { supplierOrgId, moderationStatus: "PUBLISHED" },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    include: { org: { select: { id: true, name: true } } },
+  });
+  return rows.map(toPublicReview);
+}
+
+/** Rating aggregate over a listing's published reviews. */
+export async function listingRatingAggregate(db: PrismaClient, listingId: string): Promise<RatingAggregate> {
+  const rows: RatingRow[] = await db.review.findMany({
+    where: { listingId, moderationStatus: "PUBLISHED" },
+    select: { qualityRating: true, communicationRating: true, onTimeRating: true, packagingAccuracyRating: true },
+  });
+  return averageRatings(rows);
+}
+
+/** Rating aggregate over a supplier org's published reviews. */
+export async function supplierRatingAggregate(db: PrismaClient, supplierOrgId: string): Promise<RatingAggregate> {
+  const rows: RatingRow[] = await db.review.findMany({
+    where: { supplierOrgId, moderationStatus: "PUBLISHED" },
+    select: { qualityRating: true, communicationRating: true, onTimeRating: true, packagingAccuracyRating: true },
+  });
+  return averageRatings(rows);
+}
+
 export class ReviewsRepository {
   readonly #db: PrismaClient;
   readonly #auth: AuthContext;
@@ -319,61 +385,22 @@ export class ReviewsRepository {
 
   /** PUBLISHED reviews for a listing, newest first (public surface). */
   async listingReviews(listingId: string): Promise<PublicReview[]> {
-    const rows = await this.#db.review.findMany({
-      where: { listingId, moderationStatus: "PUBLISHED" },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      include: { org: { select: { id: true, name: true } } },
-    });
-    return rows.map((row) => this.#toPublic(row));
+    return publishedListingReviews(this.#db, listingId);
   }
 
   /** PUBLISHED reviews for a supplier org, newest first (public surface). */
   async supplierReviews(supplierOrgId: string): Promise<PublicReview[]> {
-    const rows = await this.#db.review.findMany({
-      where: { supplierOrgId, moderationStatus: "PUBLISHED" },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      include: { org: { select: { id: true, name: true } } },
-    });
-    return rows.map((row) => this.#toPublic(row));
+    return publishedSupplierReviews(this.#db, supplierOrgId);
   }
 
   /** Aggregate over a listing's published reviews. */
   async listingAggregate(listingId: string): Promise<RatingAggregate> {
-    const rows: RatingRow[] = await this.#db.review.findMany({
-      where: { listingId, moderationStatus: "PUBLISHED" },
-      select: { qualityRating: true, communicationRating: true, onTimeRating: true, packagingAccuracyRating: true },
-    });
-    return averageRatings(rows);
+    return listingRatingAggregate(this.#db, listingId);
   }
 
   /** Aggregate over a supplier's published reviews. */
   async supplierAggregate(supplierOrgId: string): Promise<RatingAggregate> {
-    const rows: RatingRow[] = await this.#db.review.findMany({
-      where: { supplierOrgId, moderationStatus: "PUBLISHED" },
-      select: { qualityRating: true, communicationRating: true, onTimeRating: true, packagingAccuracyRating: true },
-    });
-    return averageRatings(rows);
+    return supplierRatingAggregate(this.#db, supplierOrgId);
   }
 
-  #toPublic(row: Prisma.ReviewGetPayload<{ include: { org: { select: { id: true; name: true } } } }>): PublicReview {
-    return {
-      id: row.id,
-      listingId: row.listingId,
-      reviewerOrgId: row.org.id,
-      // Org-level authorship only — no personal emails or phones.
-      reviewerOrgName: row.org.name,
-      qualityRating: row.qualityRating,
-      communicationRating: row.communicationRating,
-      onTimeRating: row.onTimeRating,
-      packagingAccuracyRating: row.packagingAccuracyRating,
-      title: row.title,
-      // Read-side redaction: nothing leaks through pre-policy rows.
-      body: row.body === null ? null : redactContactInfo(row.body),
-      supplierResponse: row.supplierResponse === null ? null : redactContactInfo(row.supplierResponse),
-      supplierRespondedAt: row.supplierRespondedAt,
-      createdAt: row.createdAt,
-    };
-  }
 }
