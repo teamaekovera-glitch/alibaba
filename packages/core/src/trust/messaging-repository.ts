@@ -123,7 +123,7 @@ export class MessagingRepository {
     action: string,
     entityType: string,
     entityId: string,
-    note?: string,
+    after?: Prisma.InputJsonValue,
   ): Promise<void> {
     await tx.auditLog.create({
       data: {
@@ -133,7 +133,7 @@ export class MessagingRepository {
         action,
         entityType,
         entityId,
-        ...(note !== undefined ? { note } : {}),
+        ...(after !== undefined ? { after } : {}),
       },
     });
   }

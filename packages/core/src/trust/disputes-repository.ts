@@ -58,7 +58,7 @@ export class DisputesRepository {
     action: string,
     entityType: string,
     entityId: string,
-    note?: string,
+    after?: Prisma.InputJsonValue,
   ): Promise<void> {
     await tx.auditLog.create({
       data: {
@@ -68,7 +68,7 @@ export class DisputesRepository {
         action,
         entityType,
         entityId,
-        ...(note !== undefined ? { note } : {}),
+        ...(after !== undefined ? { after } : {}),
       },
     });
   }
@@ -111,13 +111,15 @@ export class DisputesRepository {
       where: { id: disputeId },
       data: { status: final.to },
     });
-    await this.#audit(tx, audit.action, "Dispute", disputeId, audit.note);
+    await this.#audit(tx, audit.action, "Dispute", disputeId, audit.note ? { note: audit.note } : undefined);
     return { dispute: updated, selfLoop: final.from === final.to };
   }
 
   /** Append a discussion response (buyer opener, supplier side, or staff). */
   async respond(disputeId: string, body: string): Promise<DisputeResponseView> {
-    this.#require("order:create");
+    // Discussion is comms: every participating role (buyer, supplier, staff)
+    // holds message:send — order:create would lock suppliers out entirely.
+    this.#require("message:send");
     if (!body.trim()) {
       throw new DisputeError("write a response first");
     }
@@ -153,7 +155,8 @@ export class DisputesRepository {
 
   /** Attach an evidence file (buyer opener or staff) to an active dispute. */
   async attachEvidence(disputeId: string, input: { fileId: string; note?: string }) {
-    this.#require("order:create");
+    // Buyer and staff attach evidence; both hold the comms permission.
+    this.#require("message:send");
     return this.#db.$transaction(async (tx) => {
       const { dispute, isBuyer, isStaff } = await this.#participatingDispute(tx, disputeId);
       if (!isBuyer && !isStaff) {
@@ -190,7 +193,8 @@ export class DisputesRepository {
 
   /** Buyer withdraws an active dispute; the order resumes to its pre-dispute status. */
   async withdraw(disputeId: string) {
-    this.#require("order:create");
+    // Withdrawal is a participant action; buyer and staff both hold message:send.
+    this.#require("message:send");
     return this.#db.$transaction(async (tx) => {
       const { isBuyer, isStaff } = await this.#participatingDispute(tx, disputeId);
       if (!isBuyer && !isStaff) {

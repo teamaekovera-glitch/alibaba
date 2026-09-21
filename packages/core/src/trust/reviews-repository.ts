@@ -31,6 +31,19 @@ export class ReviewError extends Error {
   }
 }
 
+/**
+ * Internal signal raised inside the review transaction when a duplicate body
+ * matches. The FraudFlag is written by the caller AFTER the rollback — a flag
+ * written inside the aborted transaction would be rolled back along with it.
+ */
+class DuplicateReviewSignal extends Error {
+  constructor(
+    readonly prior: { id: string; listingId: string | null },
+  ) {
+    super("duplicate review body");
+  }
+}
+
 export interface CreateReviewInput {
   orderId: string;
   /** The exact order line being reviewed — anchors the verified purchase. */
@@ -81,7 +94,7 @@ export class ReviewsRepository {
     action: string,
     entityType: string,
     entityId: string,
-    note?: string,
+    after?: Prisma.InputJsonValue,
   ): Promise<void> {
     await tx.auditLog.create({
       data: {
@@ -91,7 +104,7 @@ export class ReviewsRepository {
         action,
         entityType,
         entityId,
-        ...(note !== undefined ? { note } : {}),
+        ...(after !== undefined ? { after } : {}),
       },
     });
   }
@@ -158,23 +171,19 @@ export class ReviewsRepository {
       );
     }
 
-    return this.#db.$transaction(async (tx) => {
+    try {
+      return await this.#db.$transaction(async (tx) => {
       // Fraud controls: sliding-window cap per buyer org, then a
       // duplicate-body check that flags repeat-paste reviews.
       await enforceRateLimit(tx, "reviews", this.#auth.orgId);
       if (input.body) {
-        const prior = await findDuplicateReview(tx, this.#auth.orgId, input.body);
+        // Fingerprint the REDACTED body: stored bodies are redacted on write,
+        // so comparing raw input against them would never match once an email
+        // or phone is present.
+        const prior = await findDuplicateReview(tx, this.#auth.orgId, redactContactInfo(input.body));
         if (prior) {
-          await tx.fraudFlag.create({
-            data: {
-              orgId: this.#auth.orgId,
-              subjectType: "listing",
-              subjectId: prior.listingId ?? order.id,
-              reason: `duplicate review body matching prior review ${prior.id}`,
-              severity: "MEDIUM",
-            },
-          });
-          throw new ReviewError("this review duplicates one you recently submitted");
+          // Escalate past the transaction boundary — see DuplicateReviewSignal.
+          throw new DuplicateReviewSignal(prior);
         }
       }
       const review = await tx.review.create({
@@ -201,9 +210,24 @@ export class ReviewsRepository {
           },
         },
       });
-      await this.#audit(tx, REVIEWS_AUDIT.create, "Review", review.id, `order ${order.id}`);
+      await this.#audit(tx, REVIEWS_AUDIT.create, "Review", review.id, { orderId: order.id });
       return review;
-    });
+      });
+    } catch (error) {
+      if (!(error instanceof DuplicateReviewSignal)) {
+        throw error;
+      }
+      await this.#db.fraudFlag.create({
+        data: {
+          orgId: this.#auth.orgId,
+          subjectType: "listing",
+          subjectId: error.prior.listingId ?? order.id,
+          reason: `duplicate review body matching prior review ${error.prior.id}`,
+          severity: "MEDIUM",
+        },
+      });
+      throw new ReviewError("this review duplicates one you recently submitted");
+    }
   }
 
   /** The reviewed supplier answers once (spec: one supplier response). */
