@@ -11,6 +11,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@packsource/agent-api": "workspace:*",
     "@packsource/ai": "workspace:*",
     "@packsource/benchmarks": "workspace:*",
     "@packsource/core": "workspace:*",
