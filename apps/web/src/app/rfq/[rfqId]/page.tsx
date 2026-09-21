@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { RecordNotFoundError, computeLandedCost, landedCostComponentsFromQuote } from "@packsource/core";
+import { InvalidRfqError, RecordNotFoundError, computeLandedCost, landedCostComponentsFromQuote, type SupplierMatch } from "@packsource/core";
 import { auth } from "@/auth";
 import { formatCents } from "@/lib/money";
 import { tradeRepositories } from "@/lib/trade";
@@ -55,9 +55,23 @@ export default async function RfqDetailPage({ params }: { params: Promise<{ rfqI
   const quotes = await trade.quotes.listForRfq(rfqId);
 
   // Buyer extras: threads (with supplier names) and, while still a draft,
-  // the SQL matcher's supplier suggestions.
+  // the SQL matcher's supplier suggestions. A matching failure (e.g. a draft
+  // with no category) is a typed, user-facing state — it must never take the
+  // whole detail page down.
   const threads = isBuyer ? await trade.rfq.threadsForRfq(rfqId) : [];
-  const matches = isBuyer && rfq.status === "DRAFT" ? await trade.rfq.matchSuppliers(rfqId) : [];
+  let matches: SupplierMatch[] = [];
+  let matchError: string | null = null;
+  if (isBuyer && rfq.status === "DRAFT") {
+    try {
+      matches = await trade.rfq.matchSuppliers(rfqId);
+    } catch (error) {
+      if (error instanceof InvalidRfqError || error instanceof RecordNotFoundError) {
+        matchError = error.message;
+      } else {
+        throw error; // unknown errors must surface, not become page copy
+      }
+    }
+  }
 
   // Supplier extras: their own thread on this RFQ (for messaging).
   const myThread = isBuyer ? null : (await trade.rfq.inbox()).find((t) => t.rfqId === rfqId) ?? null;
@@ -97,6 +111,13 @@ export default async function RfqDetailPage({ params }: { params: Promise<{ rfqI
 
       {isBuyer ? (
         <>
+          {matchError ? (
+            <section className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4" data-testid="match-error">
+              <h2 className="text-lg font-medium">Supplier matching unavailable</h2>
+              <p className="mt-1 text-sm text-neutral-700">{matchError}</p>
+            </section>
+          ) : null}
+
           {matches.length > 0 ? (
             <section className="mt-6">
               <h2 className="text-lg font-medium">Matched suppliers ({matches.length})</h2>

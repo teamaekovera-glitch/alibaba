@@ -24,10 +24,11 @@ import {
  *
  * Three signed-in sessions (buyer OWNER, supplier sales, supplier ops)
  * mirror the real role split: sales owns pricing, ops owns fulfillment.
- * One server-side bootstrap step creates the RFQ the merged UI cannot
- * express yet (no category field on the lean form; SINGLE mode unexposed) —
- * documented as a finding in the closing PR. Everything else is driven
- * through the real UI and server actions.
+ * The RFQ bootstrap step runs through the RfqRepository (not the UI) to
+ * keep this long state machine fast — the real UI creation+send leg,
+ * including category selection and supplier matching, is covered by
+ * rfq-ui-create.spec.ts. Everything else is driven through the real UI
+ * and server actions.
  */
 
 const QUANTITY = 2500;

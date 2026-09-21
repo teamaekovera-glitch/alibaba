@@ -4,10 +4,10 @@ import { RfqRepository, type AuthContext } from "@packsource/core";
 
 /**
  * Shared e2e helpers. Zero API keys: sessions come from the password
- * credentials provider against users seeded by global-setup, and the one
- * server-side bootstrap (creating + sending an RFQ the UI cannot express
- * yet — see buyer-journey.spec.ts) runs through the same @packsource/core
- * repositories the server actions use.
+ * credentials provider against users seeded by global-setup. The one
+ * server-side bootstrap (bootstrapSentRfq) exists to keep the long trade
+ * journey fast; the UI creation+send leg is exercised for real in
+ * rfq-ui-create.spec.ts.
  */
 
 export const E2E_PASSWORD = "e2e-password-123";
@@ -45,6 +45,27 @@ export async function orderForRfq(rfqId: string): Promise<string | null> {
 }
 
 /**
+ * Category of a seeded listing, resolved at runtime — the seed assigns
+ * categories programmatically (round-robin over the flattened taxonomy),
+ * so the spec never hardcodes a category name or id.
+ */
+export async function listingCategoryFor(listingId: string): Promise<{ categoryId: string; categoryName: string }> {
+  const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
+  try {
+    const listing = await prisma.listing.findUnique({
+      where: { id: listingId },
+      select: { categoryId: true, category: { select: { name: true } } },
+    });
+    if (!listing) {
+      throw new Error(`seeded listing ${listingId} is missing — run global-setup`);
+    }
+    return { categoryId: listing.categoryId, categoryName: listing.category.name };
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+/**
  * Sign in through the real password tab of /sign-in and wait for the app
  * shell (redirect to /). Safe to call on any page in any context.
  */
@@ -60,10 +81,11 @@ export async function signInWithPassword(page: Page, email: string, password: st
 /**
  * Buyer-side RFQ bootstrap: create a SINGLE-mode RFQ against a live seeded
  * listing and send it, through the exact RfqRepository the server actions
- * use. The merged UI cannot express this yet (the lean create form has no
- * category field, and BROADCAST sends match on category; SINGLE is not
- * offered) — the gap is reported in the closing PR, not patched around in
- * app code. Returns the rfq id for UI navigation.
+ * use. The UI create+send leg is now exercised for real in
+ * rfq-ui-create.spec.ts; this repository bootstrap remains only because the
+ * full trade journey (quotes → award → escrow → payout) does not need a
+ * second UI pass for its setup and the repository route keeps that long
+ * spec fast. Returns the rfq id for UI navigation.
  */
 export async function bootstrapSentRfq(input: {
   buyerEmail: string;

@@ -1,6 +1,7 @@
 "use server";
 
 import {
+  EmptyBroadcastError,
   IllegalQuoteTransitionError,
   IllegalRfqTransitionError,
   InvalidQuoteError,
@@ -10,11 +11,12 @@ import {
   PermissionDeniedError,
   QuoteExpiredError,
   RecordNotFoundError,
-  type RfqDestination,
 } from "@packsource/core";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { tradeRepositories } from "@/lib/trade";
+import { parseCreateRfqForm } from "@/lib/rfq-form";
+import { loadRfqListingContext } from "@/lib/rfq-listing-context";
 
 /**
  * RFQ/quote/negotiation/cart server actions. Same contract as onboarding:
@@ -34,6 +36,9 @@ const DOMAIN_ERRORS = [
   IllegalQuoteTransitionError,
   QuoteExpiredError,
   LandedCostError,
+  // Broadcast sends that match zero suppliers are a user-facing outcome (pick
+  // a different category / raise the quantity), not a server fault.
+  EmptyBroadcastError,
 ] as const;
 
 async function withTrade(
@@ -95,23 +100,7 @@ function dollarsToCents(form: FormData, key: string): number | null {
   return dollars * 100 + cents;
 }
 
-/**
- * "Austin, TX 78701" -> { city, state, country, postalCode } per the spec
- * envelope's structured destination. The lean form captures one free-text
- * line; unparsable text is rejected (never silently dropped) since the
- * envelope's destination shape cannot be built from it.
- */
-function parseDestination(raw: string | null): RfqDestination | undefined {
-  if (!raw || !raw.trim()) {
-    return undefined;
-  }
-  const match = /^(.+?),\s*([A-Za-z]{2})\s+(\d{5})(?:-\d{4})?$/.exec(raw.trim());
-  if (!match?.[1] || !match[2] || !match[3]) {
-    throw new InvalidRfqSpecError('destination must look like "Austin, TX 78701"');
-  }
-  return { city: match[1].trim(), state: match[2].toUpperCase(), country: "US", postalCode: match[3] };
-}
-
+/** Optional date-string form field -> Date, with form-renderable parse errors. */
 function isoDate(form: FormData, key: string): Date | null {
   const value = str(form, key);
   if (!value) {
@@ -127,35 +116,28 @@ function isoDate(form: FormData, key: string): Date | null {
 // ── buyer RFQ actions ───────────────────────────────────────────────────────
 
 export async function createRfqAction(_prev: ActionState, form: FormData): Promise<ActionState> {
-  return withTrade(async ({ rfq }) => {
-    const mode = str(form, "mode");
-    if (mode !== "BROADCAST" && mode !== "AUCTION" && mode !== "SINGLE") {
-      throw new InvalidRfqError("RFQ mode must be BROADCAST, AUCTION, or SINGLE");
+  let createdId: string | null = null;
+  const state = await withTrade(async ({ rfq }) => {
+    // FormData -> CreateRfqInput lives in lib/rfq-form.ts (pure, unit-tested);
+    // parse failures are form copy, not domain errors. The listing context for
+    // SINGLE mode is re-resolved server-side from the posted listingId — the
+    // hidden input is a hint, never a trusted category source.
+    const formListingId = str(form, "listingId");
+    const listing = formListingId ? await loadRfqListingContext(formListingId) : null;
+    const parsed = parseCreateRfqForm(form, listing);
+    if ("errors" in parsed) {
+      throw new InvalidRfqError(parsed.errors.join("; "));
     }
-    const needBy = isoDate(form, "needBy");
-    const destination = parseDestination(optional(form, "destination"));
-    const created = await rfq.create({
-      mode,
-      title: str(form, "title"),
-      description: optional(form, "description"),
-      categoryId: optional(form, "categoryId"),
-      listingId: optional(form, "listingId"),
-      quantity: str(form, "quantity") ? requiredInt(form, "quantity") : undefined,
-      closesAt: isoDate(form, "closesAt") ?? undefined,
-      spec: {
-        version: 1,
-        destination,
-        needByDate: needBy ? needBy.toISOString().slice(0, 10) : undefined,
-      },
-      lines: [
-        {
-          description: str(form, "lineDescription") || str(form, "title"),
-          quantity: requiredInt(form, "quantity"),
-        },
-      ],
-    });
-    return created.id;
+    const created = await rfq.create(parsed.input);
+    createdId = created.id;
   });
+  // A successful create lands the buyer on the new draft — sending happens
+  // there. redirect() throws a control-flow signal, so it stays outside
+  // withTrade's try/catch rather than risking translation into form copy.
+  if (createdId) {
+    redirect(`/rfq/${createdId}`);
+  }
+  return state;
 }
 
 export async function sendRfqAction(_prev: ActionState, form: FormData): Promise<ActionState> {
