@@ -1770,3 +1770,51 @@ model Notification {
   @@index([userId, readAt])
   @@index([userId, createdAt])
 }
+
+// ─── Discovery directory (read-only) ────────────────────────────────────────
+//
+// Real Platform Ready supplier rows behind the category-first discovery
+// surfaces. Browse-only by construction: this model shares no key, relation,
+// or workflow with the transactional Organization graph above — RFQs, quotes,
+// orders, and messaging attach only to onboarded organizations.
+model PlatformSupplier {
+  id             String   @id @default(cuid())
+  // URL key, e.g. "flatlands-processing" — company-name slug, deduped with
+  // state and an ordinal when two records share a name.
+  slug           String   @unique
+  name           String
+  dba            String?
+  // Parsed from the pipe-delimited "Supplier Type" source column.
+  supplierTypes  String[]
+  specialty      String?
+  products       String?
+  description    String?
+  primaryEmail   String?
+  generalEmail   String?
+  phone          String?
+  website        String?
+  linkedin       String?
+  city           String?
+  state          String?
+  zip            String?
+  country        String?
+  certifications String[]
+  yearFounded    String?
+  companySize    String?
+  // Verification tier from the source workbook (1 = strongest); null when the
+  // record carries no tier. Rendered as-is — the directory marks AI
+  // confidence rather than re-verifying records.
+  tier           Int?
+  aiConfidence   Float?
+  // Exactly one of the DISCOVERY_CATEGORIES slugs — never empty (zero-match
+  // records land in "other-general" so every record stays reachable).
+  primaryCategory String
+  // Primary first, up to 3 slugs; GIN-indexed for secondary-category lookups.
+  categorySlugs  String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([primaryCategory])
+  @@index([state])
+  @@index([categorySlugs], type: Gin)
+}
