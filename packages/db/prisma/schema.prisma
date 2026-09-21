@@ -1265,6 +1265,8 @@ model Dispute {
   subOrder         SubOrder?       @relation(fields: [subOrderId], references: [id])
   openedByUserId   String
   openedByUser     User            @relation("DisputeOpener", fields: [openedByUserId], references: [id])
+  // Order status when the dispute froze it — withdrawal resumes to here.
+  preOrderStatus   String?
   status           DisputeStatus   @default(OPEN)
   reason           String
   detail           String?

@@ -7,7 +7,8 @@
  * buyer withdrawal, and participant-scoped reads. Every mutation is
  * validated by the pure dispute machine and audited.
  */
-import { Prisma, type PrismaClient } from "@packsource/db";
+import { Prisma, type OrderStatus, type PrismaClient } from "@packsource/db";
+import { LEGAL_DISPUTE_RESOLUTIONS, orderTransition } from "../orders/order-machine";
 import { assertCan, type Permission } from "../permissions";
 import { RecordNotFoundError, type AuthContext } from "../repositories";
 import { redactContactInfo } from "../trade/redaction";
@@ -187,7 +188,7 @@ export class DisputesRepository {
     });
   }
 
-  /** Buyer withdraws an active dispute; escrow resumes via the release sweep. */
+  /** Buyer withdraws an active dispute; the order resumes to its pre-dispute status. */
   async withdraw(disputeId: string) {
     this.#require("order:create");
     return this.#db.$transaction(async (tx) => {
@@ -195,10 +196,29 @@ export class DisputesRepository {
       if (!isBuyer && !isStaff) {
         throw new DisputeError("only the disputing buyer may withdraw");
       }
-      const { dispute } = await this.#transition(tx, disputeId, { type: "WITHDRAW", at: new Date() }, {
+      const { dispute: withdrawn } = await this.#transition(tx, disputeId, { type: "WITHDRAW", at: new Date() }, {
         action: DISPUTES_AUDIT.withdraw,
       });
-      return dispute;
+      // The order machine only exits DISPUTED via RESOLVE_DISPUTE, so a
+      // withdrawal must also unfreeze the order — back to the status it was
+      // in when the dispute froze it. Escrow release resumes from there.
+      const order = await tx.order.findUnique({ where: { id: withdrawn.orderId } });
+      const resume = withdrawn.preOrderStatus;
+      if (order && order.status === "DISPUTED" && resume && LEGAL_DISPUTE_RESOLUTIONS.includes(resume as OrderStatus)) {
+        const [plan] = orderTransition(
+          {
+            status: order.status,
+            paymentSchedule: order.paymentSchedule,
+            balancePaid: true,
+            openDisputeId: null,
+          },
+          { type: "RESOLVE_DISPUTE", to: resume as OrderStatus, at: new Date() },
+        );
+        if (plan) {
+          await tx.order.update({ where: { id: order.id }, data: { status: plan.to } });
+        }
+      }
+      return withdrawn;
     });
   }
 
