@@ -33,4 +33,12 @@ export * from "./seed/attributes";
 // native binary and node builtins, which break the web app's webpack build.
 export * from "./seed/names";
 export * from "./seed/demo";
+// Discovery directory: taxonomy, classifier, import, and read-only repository.
+// Pure modules — safe for the web app's webpack build.
+export * from "./discovery/taxonomy";
+export * from "./discovery/classify";
+export * from "./discovery/slug";
+export * from "./discovery/import-rows";
+export * from "./discovery/import";
+export * from "./discovery/repository";
 export * from "./client";
