@@ -3,6 +3,7 @@ import {
   BUYER_EMAIL,
   JOURNEY_RFQ_TITLE,
   OPS_EMAIL,
+  STAFF_EMAIL,
   SALES_EMAIL,
   TARGET_LISTING_ID,
   bootstrapSentRfq,
@@ -140,13 +141,32 @@ test("buyer journey: RFQ to negotiation, award, payments, fulfillment, escrow re
   await opsPage.getByTestId("confirm-delivery").click();
   await expect(opsPage.getByTestId("order-status")).toContainText("ESCROW_RELEASED");
   await expect(opsPage.getByTestId("escrow-released")).not.toContainText("$0.00");
-  await expect(opsPage.getByTestId("order-payouts")).toContainText("SUCCEEDED");
+  // Escrow release opens the supplier payout; settlement is a platform-staff
+  // action, so the supplier leg reads PENDING until staff act on it below.
+  await expect(opsPage.getByTestId("order-payouts")).toContainText("PENDING");
 
-  // ── Buyer sees the same terminal state ─────────────────────────────────────
+  // ── Platform staff: settle the payout (mock Connect transfer) ───────────────
+  const staffContext = await browser.newContext();
+  const staffPage = await staffContext.newPage();
+  await signInWithPassword(staffPage, STAFF_EMAIL);
+  await staffPage.goto("/orders/payouts");
+  await expect(staffPage.getByTestId("payouts-title")).toBeVisible();
+  // Scope to this order's payout row — the ledger lists every seeded payout.
+  const payoutRow = staffPage
+    .locator("tbody tr")
+    .filter({ has: staffPage.locator(`a[href="/orders/${orderId}"]`) });
+  await payoutRow.getByTestId("settle-payout").click();
+  await expect(payoutRow.getByTestId("payout-status")).toContainText("PAID");
+
+  // ── Buyer and supplier see the settled terminal state ──────────────────────
   await buyerPage.goto(`/orders/${orderId}`);
   await expect(buyerPage.getByTestId("order-status")).toContainText("ESCROW_RELEASED");
+  await expect(buyerPage.getByTestId("order-payouts")).toContainText("PAID");
+  await opsPage.reload();
+  await expect(opsPage.getByTestId("order-payouts")).toContainText("PAID");
 
   await buyerContext.close();
   await salesContext.close();
   await opsContext.close();
+  await staffContext.close();
 });

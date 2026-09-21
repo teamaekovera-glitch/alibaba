@@ -16,6 +16,7 @@ export const E2E_PASSWORD = "e2e-password-123";
 export const BUYER_EMAIL = "buyer@e2e.packsource.test";
 export const SALES_EMAIL = "sales@e2e.packsource.test";
 export const OPS_EMAIL = "ops@e2e.packsource.test";
+export const STAFF_EMAIL = "staff@e2e.packsource.test";
 
 /** Live seeded listing (verified: seed_listing_0001, seed_org_supplier_001, rigid). */
 export const TARGET_LISTING_ID = "seed_listing_0001";
