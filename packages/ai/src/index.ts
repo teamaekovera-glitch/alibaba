@@ -1,5 +1,6 @@
 export { createAdapters, MockModeError } from "./createAdapters";
 export { fnv1a, fnv1aHex, hashToUnit } from "./fnv";
+export * from "./services";
 export { MockEmbeddingAdapter } from "./mocks/embedding";
 export { MockLlmAdapter } from "./mocks/llm";
 export { MockMailAdapter } from "./mocks/mail";

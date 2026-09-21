@@ -11,11 +11,14 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@packsource/agent-api": "workspace:*",
     "@packsource/ai": "workspace:*",
+    "@packsource/benchmarks": "workspace:*",
     "@packsource/core": "workspace:*",
     "@packsource/db": "workspace:*",
     "@packsource/notifications": "workspace:*",
     "@packsource/search": "workspace:*",
+    "@packsource/seo": "workspace:*",
     "@packsource/ui": "workspace:*",
     "next": "^15.1.0",
     "next-auth": "5.0.0-beta.32",

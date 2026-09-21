@@ -2,8 +2,11 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import "./globals.css";
+import { siteOrigin } from "@/lib/seo";
 
 export const metadata: Metadata = {
+  // Absolute-URL base for canonical/OpenGraph tags on every page.
+  metadataBase: new URL(siteOrigin()),
   title: "PackSource",
   description: "Aekovera CPG packaging marketplace",
 };
