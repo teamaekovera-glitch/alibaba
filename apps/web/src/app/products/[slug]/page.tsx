@@ -8,7 +8,7 @@ import { DemoDataBanner } from "@packsource/ui";
 
 import { VerificationBadge } from "@/components/verification-badge";
 import { AddToCompareButton } from "@/components/add-to-compare";
-import { ReviewsSection } from "./reviews-section";
+import { loadReviewsSectionData, ReviewsSection } from "./reviews-section";
 import {
   formatLeadTimeDays,
   formatPriceCents,
@@ -116,6 +116,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     listing.category.attributeSet as Parameters<typeof attributeRows>[0],
     listing.attributes as Record<string, unknown>,
   );
+
+  const reviewsData = await loadReviewsSectionData(listing.id, listing.orgId);
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8" data-testid="product-page">
@@ -350,7 +352,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </section>
       ) : null}
 
-      <ReviewsSection listingId={listing.id} slug={listing.slug} supplierOrgId={listing.orgId} />
+<ReviewsSection slug={listing.slug} {...reviewsData} />
     </div>
   );
 }

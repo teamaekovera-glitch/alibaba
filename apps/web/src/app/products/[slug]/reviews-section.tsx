@@ -4,25 +4,34 @@ import {
   publishedListingReviews,
 } from "@packsource/core";
 import { db } from "@/lib/db";
-import { auth } from "@/auth";
 
 import { RespondToReviewForm, ReviewForm } from "./reviews-form";
 
 type EligibleLine = { orderId: string; orderLineId: string; description: string };
 
+export type ReviewsSectionData = {
+  reviews: Awaited<ReturnType<typeof publishedListingReviews>>;
+  aggregate: Awaited<ReturnType<typeof listingRatingAggregate>>;
+  eligibleLines: EligibleLine[];
+  isSupplier: boolean;
+  isSignedIn: boolean;
+};
+
 /**
- * Storefront reviews section (spec: "Trust & comms — reviews"): verified-
- * purchase aggregate, published reviews with org-level authorship, supplier
- * responses, and — for buyers with an unreviewed delivered order line — the
- * write-review form. Core enforces every rule again on submit; the eligibility
- * query here only decides whether the form renders.
+ * Data loader for the storefront reviews section. The page calls this in its
+ * own async body so the rendered tree stays synchronous — legacy SSR
+ * (renderToStaticMarkup) cannot resolve nested async server components, and
+ * next-auth is imported lazily so anonymous storefront rendering stays
+ * loadable in vitest SSR tests (next-auth v5 beta cannot resolve
+ * `next/server` there).
  */
-export async function ReviewsSection({ listingId, slug, supplierOrgId }: { listingId: string; slug: string; supplierOrgId: string }) {
+export async function loadReviewsSectionData(listingId: string, supplierOrgId: string): Promise<ReviewsSectionData> {
   const [reviews, aggregate] = await Promise.all([
     publishedListingReviews(db, listingId),
     listingRatingAggregate(db, listingId),
   ]);
 
+  const { auth } = await import("@/auth");
   const session = await auth();
   const isSupplier = session?.user.orgId === supplierOrgId;
 
@@ -47,6 +56,17 @@ export async function ReviewsSection({ listingId, slug, supplierOrgId }: { listi
       );
   }
 
+  return { reviews, aggregate, eligibleLines, isSupplier, isSignedIn: Boolean(session?.user.orgId) };
+}
+
+/**
+ * Storefront reviews section (spec: "Trust & comms — reviews"): verified-
+ * purchase aggregate, published reviews with org-level authorship, supplier
+ * responses, and — for buyers with an unreviewed delivered order line — the
+ * write-review form. Core enforces every rule again on submit; the eligibility
+ * query in loadReviewsSectionData only decides whether the form renders.
+ */
+export function ReviewsSection({ slug, reviews, aggregate, eligibleLines, isSupplier, isSignedIn }: ReviewsSectionData & { slug: string }) {
   const axes: Array<[label: string, value: number | null]> = [
     ["Quality", aggregate.axes.qualityRating],
     ["Communication", aggregate.axes.communicationRating],
@@ -88,7 +108,7 @@ export async function ReviewsSection({ listingId, slug, supplierOrgId }: { listi
             <p className="mt-1 text-xs text-neutral-500">{eligibleLines.length - 1} more delivered line(s) you can review after this one.</p>
           ) : null}
         </div>
-      ) : session?.user.orgId && !isSupplier ? (
+      ) : isSignedIn && !isSupplier ? (
         <p className="mt-4 text-xs text-neutral-500" data-testid="reviews-ineligible">
           Reviews are verified-purchase only — leave one after a delivered order for this listing.
         </p>
