@@ -116,7 +116,8 @@ function isoDate(form: FormData, key: string): Date | null {
 // ── buyer RFQ actions ───────────────────────────────────────────────────────
 
 export async function createRfqAction(_prev: ActionState, form: FormData): Promise<ActionState> {
-  return withTrade(async ({ rfq }) => {
+  let createdId: string | null = null;
+  const state = await withTrade(async ({ rfq }) => {
     // FormData -> CreateRfqInput lives in lib/rfq-form.ts (pure, unit-tested);
     // parse failures are form copy, not domain errors. The listing context for
     // SINGLE mode is re-resolved server-side from the posted listingId — the
@@ -128,8 +129,15 @@ export async function createRfqAction(_prev: ActionState, form: FormData): Promi
       throw new InvalidRfqError(parsed.errors.join("; "));
     }
     const created = await rfq.create(parsed.input);
-    return created.id;
+    createdId = created.id;
   });
+  // A successful create lands the buyer on the new draft — sending happens
+  // there. redirect() throws a control-flow signal, so it stays outside
+  // withTrade's try/catch rather than risking translation into form copy.
+  if (createdId) {
+    redirect(`/rfq/${createdId}`);
+  }
+  return state;
 }
 
 export async function sendRfqAction(_prev: ActionState, form: FormData): Promise<ActionState> {

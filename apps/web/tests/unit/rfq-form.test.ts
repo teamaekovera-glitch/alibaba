@@ -158,8 +158,13 @@ vi.mock("next/cache", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  redirect: () => {
-    throw new Error("redirect must not fire while a trade session exists");
+  // Next's redirect() signals navigation by throwing a control-flow error
+  // with a NEXT_REDIRECT digest; mirror that shape so the action's
+  // success-path tests can assert the destination.
+  redirect: (url: string) => {
+    const error = new Error(`NEXT_REDIRECT: ${url}`) as Error & { digest?: string };
+    error.digest = `NEXT_REDIRECT;replace;${url};307;`;
+    throw error;
   },
 }));
 
@@ -181,23 +186,26 @@ describe("createRfqAction", () => {
     expect(trade.rfqCreate).not.toHaveBeenCalled();
   });
 
-  it("persists the chosen category through to rfq.create", async () => {
+  it("persists the chosen category through to rfq.create and redirects to the draft", async () => {
     trade.rfqCreate.mockResolvedValue({ id: "rfq_1" });
-    const result = await createRfqAction(null, form({ ...broadcastFields, categoryId: "cat_rigid" }));
-    expect(result).toEqual({ ok: true, message: "rfq_1" });
+    // Success is signalled by Next's redirect() control-flow throw.
+    await expect(
+      createRfqAction(null, form({ ...broadcastFields, categoryId: "cat_rigid" })),
+    ).rejects.toMatchObject({ digest: expect.stringContaining("/rfq/rfq_1") });
     expect(trade.rfqCreate).toHaveBeenCalledTimes(1);
     const input = trade.rfqCreate.mock.calls[0]?.[0];
     expect(input?.categoryId).toBe("cat_rigid");
     expect(input?.mode).toBe("BROADCAST");
   });
 
-  it("resolves the SINGLE-listing category from the loaded listing context", async () => {
+  it("resolves the SINGLE-listing category from the loaded listing context and redirects", async () => {
     trade.rfqCreate.mockResolvedValue({ id: "rfq_2" });
-    const result = await createRfqAction(
-      null,
-      form({ mode: "SINGLE", title: "pouch run", quantity: "1200", listingId: LISTING.id }),
-    );
-    expect(result).toEqual({ ok: true, message: "rfq_2" });
+    await expect(
+      createRfqAction(
+        null,
+        form({ mode: "SINGLE", title: "pouch run", quantity: "1200", listingId: LISTING.id }),
+      ),
+    ).rejects.toMatchObject({ digest: expect.stringContaining("/rfq/rfq_2") });
     const input = trade.rfqCreate.mock.calls[0]?.[0];
     expect(input?.mode).toBe("SINGLE");
     expect(input?.listingId).toBe(LISTING.id);

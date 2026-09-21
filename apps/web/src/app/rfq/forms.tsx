@@ -104,7 +104,8 @@ export function CreateRfqForm({
           <select
             id="rfq-category"
             name="categoryId"
-            required
+            // No native `required`: the typed server-rendered error is the
+            // product's validation surface here (e2e asserts its copy).
             className={inputClass}
             defaultValue={listing?.categoryId ?? ""}
             data-testid="rfq-category"
