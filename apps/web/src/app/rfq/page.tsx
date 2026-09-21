@@ -2,14 +2,20 @@ import { PermissionDeniedError } from "@packsource/core";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { db } from "@/lib/db";
 import { tradeRepositories } from "@/lib/trade";
+import { loadRfqListingContext } from "@/lib/rfq-listing-context";
 import { CreateRfqForm, CancelRfqButton, SendRfqButton } from "./forms";
 
 /**
  * Buyer RFQ dashboard: create RFQs and track the pipeline. Suppliers see a
  * pointer to their inbox — RFQ creation is a buyer action.
  */
-export default async function RfqDashboardPage() {
+export default async function RfqDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
   const session = await auth();
   if (!session) {
     redirect("/sign-in");
@@ -18,6 +24,28 @@ export default async function RfqDashboardPage() {
   if (!trade) {
     redirect("/sign-in");
   }
+
+  const params = await searchParams;
+  const requestedListingId = typeof params.listing === "string" ? params.listing : undefined;
+
+  // Active taxonomy categories for the creation form (broadcast matching is
+  // scoped to one category). Children are listed under their parent's name.
+  const categoryRows = await db.category.findMany({
+    where: { isActive: true },
+    orderBy: [{ position: "asc" }, { name: "asc" }],
+    select: { id: true, name: true, parent: { select: { name: true } } },
+  });
+  const categories = categoryRows.map((category) => ({
+    id: category.id,
+    name: category.parent ? `${category.parent.name} — ${category.name}` : category.name,
+  }));
+
+  // Deep link from a product/listing page ("Request a quote"): the form opens
+  // in SINGLE mode with the listing's category inherited. A listing that is
+  // missing or no longer live falls back to the plain broadcast form — the
+  // notice says so, it is never a silent drop.
+  const listing = requestedListingId ? await loadRfqListingContext(requestedListingId) : null;
+  const listingUnavailable = requestedListingId !== undefined && listing === null;
 
   let rfqs;
   try {
@@ -97,12 +125,19 @@ export default async function RfqDashboardPage() {
       <section className="mt-10 rounded-lg border border-neutral-200 p-6">
         <h2 className="text-lg font-medium">New RFQ</h2>
         <p className="mt-1 text-xs text-neutral-500">
-          Broadcast RFQs go to matched suppliers; auction RFQs close at the set time;
-          all money stays in integer cents. Destination and need-by ride along with
-          the structured spec.
+          Broadcast RFQs go to matched suppliers within the selected category;
+          auction RFQs close at the set time; a single-listing RFQ quotes one
+          listing directly; all money stays in integer cents. Destination and
+          need-by ride along with the structured spec.
         </p>
+        {listingUnavailable ? (
+          <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800" data-testid="rfq-listing-unavailable">
+            That listing is no longer available for a direct quote request — create a
+            broadcast RFQ below instead.
+          </p>
+        ) : null}
         <div className="mt-4 max-w-xl">
-          <CreateRfqForm />
+          <CreateRfqForm categories={categories} listing={listing} />
         </div>
       </section>
     </main>

@@ -184,7 +184,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <Link
-              href="/rfq"
+              href={`/rfq?listing=${listing.id}`}
               data-testid="request-quote"
               className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700"
             >

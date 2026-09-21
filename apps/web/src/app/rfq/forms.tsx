@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type { ActionState } from "./actions";
 import {
   acceptQuoteAction,
@@ -54,9 +54,17 @@ function Submit({ pending, children, testid }: { pending: boolean; children: Rea
   );
 }
 
-/** Buyer: create an RFQ (single-line lean form; spec attributes later wave). */
-export function CreateRfqForm({ listingId }: { listingId?: string }) {
+/** Buyer: create an RFQ — category scopes broadcast matching; SINGLE mode (offered only when the form is mounted with a listing context) inherits the listing's category. */
+export function CreateRfqForm({
+  categories,
+  listing,
+}: {
+  categories: { id: string; name: string }[];
+  listing?: { id: string; title: string; categoryId: string; categoryName: string } | null;
+}) {
   const [state, action, pending] = useActionState(createRfqAction, null);
+  const [mode, setMode] = useState<"BROADCAST" | "AUCTION" | "SINGLE">(listing ? "SINGLE" : "BROADCAST");
+  const isSingle = mode === "SINGLE";
   return (
     <form action={action} className="space-y-3" data-testid="rfq-create">
       <ErrorText state={state} />
@@ -67,9 +75,17 @@ export function CreateRfqForm({ listingId }: { listingId?: string }) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelClass} htmlFor="rfq-mode">Mode</label>
-          <select id="rfq-mode" name="mode" className={inputClass} defaultValue="BROADCAST" data-testid="rfq-mode">
+          <select
+            id="rfq-mode"
+            name="mode"
+            className={inputClass}
+            value={mode}
+            onChange={(event) => setMode(event.target.value as "BROADCAST" | "AUCTION" | "SINGLE")}
+            data-testid="rfq-mode"
+          >
             <option value="BROADCAST">Broadcast</option>
             <option value="AUCTION">Auction (timed)</option>
+            {listing ? <option value="SINGLE">Single listing</option> : null}
           </select>
         </div>
         <div>
@@ -77,6 +93,29 @@ export function CreateRfqForm({ listingId }: { listingId?: string }) {
           <input id="rfq-quantity" name="quantity" type="number" min="1" required className={inputClass} data-testid="rfq-quantity" />
         </div>
       </div>
+      {isSingle && listing ? (
+        <div className="rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-700" data-testid="rfq-listing-context">
+          Quote request for <strong>{listing.title}</strong> — the supplier behind this listing is the
+          sole recipient; the category (<strong>{listing.categoryName}</strong>) is inherited from the listing.
+        </div>
+      ) : (
+        <div>
+          <label className={labelClass} htmlFor="rfq-category">Category</label>
+          <select
+            id="rfq-category"
+            name="categoryId"
+            required
+            className={inputClass}
+            defaultValue={listing?.categoryId ?? ""}
+            data-testid="rfq-category"
+          >
+            <option value="" disabled>Pick a category — broadcast RFQs match suppliers within it</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>{category.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelClass} htmlFor="rfq-destination">Destination</label>
@@ -92,7 +131,7 @@ export function CreateRfqForm({ listingId }: { listingId?: string }) {
           <label className={labelClass} htmlFor="rfq-line-description">Item description</label>
           <input id="rfq-line-description" name="lineDescription" className={inputClass} placeholder="Kraft stand-up pouch, 32oz, matte" data-testid="rfq-line-description" />
         </div>
-        {listingId ? <input type="hidden" name="listingId" value={listingId} /> : null}
+        {listing ? <input type="hidden" name="listingId" value={listing.id} /> : null}
         <div>
           <label className={labelClass} htmlFor="rfq-closesat">Auction closes (optional)</label>
           <input id="rfq-closesat" name="closesAt" type="datetime-local" className={inputClass} data-testid="rfq-closesat" />
