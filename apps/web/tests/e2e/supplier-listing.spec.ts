@@ -9,7 +9,6 @@ import { SALES_EMAIL, signInWithPassword } from "./helpers";
  * adapters are the deterministic mocks wired by the mock-first rule.
  */
 
-const LISTING_TITLE = "E2E Listing — 16 oz PET Jar";
 const SPEC_SHEET = [
   "Material: PET (recycled content 30%)",
   "Capacity: 473 ml",
@@ -20,6 +19,9 @@ const SPEC_SHEET = [
 ].join("\n");
 
 test("supplier creates a listing, extracts spec, confirms, and submits for review", async ({ page }) => {
+  // Unique per run: leftovers from previous runs must not match the row
+  // locator (drafts persist on the long-lived local database).
+  const LISTING_TITLE = `E2E Listing — 16 oz PET Jar ${Date.now().toString(36)}`;
   await signInWithPassword(page, SALES_EMAIL);
 
   // Seeded workflow rows are present in the console (deterministic seed).

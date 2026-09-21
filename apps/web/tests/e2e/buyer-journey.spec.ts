@@ -6,6 +6,7 @@ import {
   SALES_EMAIL,
   TARGET_LISTING_ID,
   bootstrapSentRfq,
+  orderForRfq,
   signInWithPassword,
 } from "./helpers";
 
@@ -31,6 +32,9 @@ import {
 const QUANTITY = 2500;
 
 test("buyer journey: RFQ to negotiation, award, payments, fulfillment, escrow release", async ({ browser }) => {
+  // Three authenticated contexts and a long state machine — grant 3x the
+  // default budget.
+  test.slow();
   const rfqId = await bootstrapSentRfq({
     buyerEmail: BUYER_EMAIL,
     buyerOrgId: "seed_org_buyer_01",
@@ -85,19 +89,23 @@ test("buyer journey: RFQ to negotiation, award, payments, fulfillment, escrow re
   await buyerPage.reload();
   await expect(buyerPage.getByTestId("rfq-detail-status")).toContainText("OPEN");
   await expect(buyerPage.getByTestId("buyer-quote-list")).toContainText("SUPERSEDED");
-  await expect(buyerPage.getByTestId("thread-list")).toContainText("COUNTER_OFFER");
+  // The thread renders message cards — the counter-offer surfaces as its
+  // message text, not a COUNTER_OFFER type badge.
+  await expect(buyerPage.getByTestId("thread-list")).toContainText("Volume discount — one revision.");
   // Accept the outstanding (revision) quote — creates the pre-payment order.
+  // The accept form renders errors only (no success message), so the order
+  // id is resolved through the quote → order relation.
   await buyerPage.getByTestId("accept-quote").click();
-  const okMessage = await buyerPage.getByTestId("form-ok").textContent();
-  const orderId = /Order (\S+) created/.exec(okMessage ?? "")?.[1];
-  expect(orderId, "accept action must report the created order id").toBeTruthy();
+  await expect(buyerPage.getByTestId("rfq-detail-status")).toContainText("AWARDED");
+  const orderId = await orderForRfq(rfqId);
+  expect(orderId, "accepting the quote must create an order").toBeTruthy();
 
   // ── Buyer: confirm order (30/70) and pay the deposit into escrow ──────────
   await buyerPage.goto(`/orders/${orderId}`);
   await expect(buyerPage.getByTestId("order-status")).toContainText("DRAFT");
   await buyerPage.getByTestId("confirm-order-submit").click();
   await expect(buyerPage.getByTestId("order-status")).toContainText("DEPOSIT_DUE");
-  await buyerPage.getByTestId("pay-payment-submit").click();
+  await buyerPage.getByTestId("pay-payment").click();
   await expect(buyerPage.getByTestId("order-status")).toContainText("DEPOSIT_PAID");
   await expect(buyerPage.getByTestId("escrow-held")).not.toContainText("$0.00");
 
@@ -106,25 +114,30 @@ test("buyer journey: RFQ to negotiation, award, payments, fulfillment, escrow re
   await opsPage.goto("/orders");
   await expect(opsPage.getByTestId("supplier-orders-table")).toBeVisible();
   await opsPage.locator(`a[href="/orders/${orderId}"]`).first().click();
-  await opsPage.getByTestId("start-production-submit").click();
+  await opsPage.getByTestId("start-production").click();
   await expect(opsPage.getByTestId("order-status")).toContainText("IN_PRODUCTION");
-  await opsPage.getByTestId("complete-production-submit").click();
+  await opsPage.getByTestId("complete-production").click();
   await expect(opsPage.getByTestId("order-status")).toContainText("READY_TO_SHIP");
-  await opsPage.getByTestId("issue-balance-invoice-submit").click();
+  await opsPage.getByTestId("issue-balance-invoice").click();
   await expect(opsPage.getByTestId("order-status")).toContainText("BALANCE_DUE");
 
   // ── Buyer: pay the balance ─────────────────────────────────────────────────
+  // The balance payment records balancePaid but does not advance the order
+  // machine — SHIP (at mark-in-transit) is the next transition and it gates
+  // on balancePaid.
   await buyerPage.reload();
-  await buyerPage.getByTestId("pay-payment-submit").click();
-  await expect(buyerPage.getByTestId("order-status")).toContainText("READY_TO_SHIP");
+  await buyerPage.getByTestId("pay-payment").click();
+  await expect(buyerPage.getByTestId("order-status")).toContainText("BALANCE_DUE");
 
   // ── Supplier ops: shipment → transit → delivery → escrow release ──────────
   await opsPage.reload();
+  // Multi-field forms keep the -submit suffix on their button; the bare
+  // "create-shipment" test id is the form element itself.
   await opsPage.getByTestId("create-shipment-submit").click();
   await expect(opsPage.getByTestId("shipment-card")).toContainText("CREATED");
-  await opsPage.getByTestId("mark-in-transit-submit").click();
+  await opsPage.getByTestId("mark-in-transit").click();
   await expect(opsPage.getByTestId("order-status")).toContainText("SHIPPED");
-  await opsPage.getByTestId("confirm-delivery-submit").click();
+  await opsPage.getByTestId("confirm-delivery").click();
   await expect(opsPage.getByTestId("order-status")).toContainText("ESCROW_RELEASED");
   await expect(opsPage.getByTestId("escrow-released")).not.toContainText("$0.00");
   await expect(opsPage.getByTestId("order-payouts")).toContainText("SUCCEEDED");

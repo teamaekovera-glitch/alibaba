@@ -25,7 +25,18 @@ function hashPassword(password: string): string {
 
 export default async function globalSetup(): Promise<void> {
   const repoRoot = path.join(__dirname, "../../..");
-  execSync("pnpm --filter @packsource/db exec prisma migrate deploy", {
+  // Reset to a fresh migrated schema on every run. The mock Stripe adapter
+  // mints deterministic payment-intent ids, so e2e-created rows from
+  // previous runs collide on unique constraints — a clean schema per run
+  // makes local runs identical to CI.
+  execSync("pnpm --filter @packsource/db exec prisma migrate reset --force --skip-generate", {
+    cwd: repoRoot,
+    stdio: "inherit",
+    env: process.env,
+  });
+  // Recreate the deterministic fictional data (seeded listings, orgs, and
+  // workflow rows the suite reads).
+  execSync("pnpm --filter @packsource/db seed", {
     cwd: repoRoot,
     stdio: "inherit",
     env: process.env,

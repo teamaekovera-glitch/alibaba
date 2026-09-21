@@ -27,6 +27,23 @@ export const OTHER_LISTING_SLUG = "seed-listing-0002";
 export const JOURNEY_RFQ_TITLE = "E2E — 32oz PP Cup run";
 
 /**
+ * The accepted quote's order id. The accept form renders errors only (no
+ * success message), so the order is resolved through the quote → order link.
+ */
+export async function orderForRfq(rfqId: string): Promise<string | null> {
+  const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_URL } } });
+  try {
+    const order = await prisma.order.findFirst({
+      where: { quote: { rfqId } },
+      orderBy: { createdAt: "desc" },
+    });
+    return order?.id ?? null;
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+/**
  * Sign in through the real password tab of /sign-in and wait for the app
  * shell (redirect to /). Safe to call on any page in any context.
  */
@@ -70,19 +87,12 @@ export async function bootstrapSentRfq(input: {
       role: "OWNER",
     };
     const rfqRepository = new RfqRepository(prisma, authContext);
-    const existing = await prisma.rfq.findFirst({
-      where: { orgId: input.buyerOrgId, title: input.title },
-      orderBy: { createdAt: "desc" },
-    });
-    if (existing) {
-      // Reuse when a previous run left this RFQ in a reusable state; a fresh
-      // run after a completed journey creates a new one (the old one is past
-      // DRAFT and cannot be resent).
-      return existing.id;
-    }
+    // Always create a fresh RFQ: title carries a run-unique suffix so prior
+    // runs (whose negotiation may be mid-flight or awarded) never pollute
+    // this run's quote list or thread.
     const rfq = await rfqRepository.create({
       mode: "SINGLE",
-      title: input.title,
+      title: `${input.title} ${Date.now().toString(36)}`,
       listingId: input.listingId,
       quantity: input.quantity,
       lines: [{ description: input.title, quantity: input.quantity }],
