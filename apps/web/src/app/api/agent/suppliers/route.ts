@@ -9,6 +9,16 @@ import { db } from "@/lib/db";
  */
 export const dynamic = "force-dynamic";
 
+/**
+ * Codepoint ordering for the agent directory contract: byte-wise name
+ * comparison is identical on every environment (no database collation
+ * involved), with id as the deterministic tie-break.
+ */
+function byNameThenId(a: { name: string; id: string }, b: { name: string; id: string }): number {
+  if (a.name !== b.name) return a.name < b.name ? -1 : 1;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
 export async function GET(request: Request): Promise<Response> {
   const gate = agentAuth(request);
   if (!gate.ok) {
@@ -31,9 +41,10 @@ export async function GET(request: Request): Promise<Response> {
   const [rows, total] = await Promise.all([
     db.organization.findMany({
       where,
-      orderBy: [{ name: "asc" }, { id: "asc" }],
-      skip: paging.offset,
-      take: paging.limit,
+      // Id order from the database is stable everywhere; the exposed ordering
+      // is applied below in TypeScript because SQL `ORDER BY name` follows the
+      // database collation and would not be deterministic across environments.
+      orderBy: { id: "asc" },
       select: {
         id: true,
         name: true,
@@ -53,5 +64,7 @@ export async function GET(request: Request): Promise<Response> {
     db.organization.count({ where }),
   ]);
 
-  return agentPage(rows.map((row) => serializeAgentSupplier(row)), paging, total);
+  const sorted = [...rows].sort(byNameThenId);
+  const page = sorted.slice(paging.offset, paging.offset + paging.limit);
+  return agentPage(page.map((row) => serializeAgentSupplier(row)), paging, total);
 }

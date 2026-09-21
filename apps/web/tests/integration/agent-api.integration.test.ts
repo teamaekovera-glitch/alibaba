@@ -149,7 +149,7 @@ describe("agent API against the seed", () => {
     const response = await SuppliersRoute(get("/api/agent/suppliers?limit=100", buyerOrgId));
     expect(response.status).toBe(200);
     const body = (await response.json()) as {
-      data: { slug: string; verificationStatus: string; locations: unknown[] }[];
+      data: { name: string; slug: string; verificationStatus: string; locations: unknown[] }[];
       paging: { total: number };
     };
     expect(body.data.length).toBeGreaterThan(1);
