@@ -104,8 +104,10 @@ describe("buyer storefront pages against the seed", () => {
     expect(html).toContain('data-testid="reviews-section"');
     expect(html).toContain('data-testid="reviews-empty"');
     expect(html).toContain("Demo data");
-    // Guest-visible RFQ handoff is a plain link — auth lives in the RFQ surface.
-    expect(html).toContain('href="/rfq"');
+    // Guest-visible RFQ handoff is a plain link — auth lives in the RFQ
+    // surface. The link deep-links with the listing so the form inherits
+    // SINGLE mode and the listing's category server-side.
+    expect(html).toContain(`href="/rfq?listing=${listing.id}"`);
     // Ladder rows come from the listing's own MOQ tiers (integer cents).
     for (const tier of listing.moqTiers.slice(0, 3)) {
       expect(html).toContain(
